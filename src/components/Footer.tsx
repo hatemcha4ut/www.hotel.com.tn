@@ -8,7 +8,6 @@ export function Footer() {
           <div>
             <div className="flex items-center gap-3 mb-4">
               <img src={hotelCitiesLogo} alt="Hotel Cities" className="w-12 h-12 rounded-lg" />
-              <h3 className="text-lg font-bold">Hotel Cities</h3>
             </div>
             <p className="text-background/80 text-sm">
               American Tours - Facilitateur de loisir en Tunisie.

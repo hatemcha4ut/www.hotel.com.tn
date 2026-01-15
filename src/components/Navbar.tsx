@@ -37,7 +37,6 @@ export function Navbar() {
           <div className="flex items-center gap-8">
             <a href="/" className="flex items-center gap-3">
               <img src={hotelCitiesLogo} alt="Hotel Cities" className="w-10 h-10 rounded-lg" />
-              <span className="text-xl font-bold text-foreground hidden sm:block">Hotel Cities</span>
             </a>
             <NavLinks />
           </div>
