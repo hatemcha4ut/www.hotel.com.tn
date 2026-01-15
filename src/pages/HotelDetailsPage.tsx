@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import {
   ArrowLeft,
   Star,
@@ -21,7 +23,7 @@ import {
 import { api } from '@/lib/api'
 import { Hotel, Room } from '@/types'
 import { useApp } from '@/contexts/AppContext'
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
 
@@ -32,12 +34,16 @@ interface HotelDetailsPageProps {
 }
 
 export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPageProps) {
-  const { searchParams } = useApp()
+  const { searchParams, setSearchParams } = useApp()
   const [hotel, setHotel] = useState<Hotel | null>(null)
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<string>('')
   const [selectedBoardings, setSelectedBoardings] = useState<Record<string, string>>({})
+  const [showDateDialog, setShowDateDialog] = useState(false)
+  const [selectedRoomForBooking, setSelectedRoomForBooking] = useState<Room | null>(null)
+  const [tempCheckIn, setTempCheckIn] = useState<Date | undefined>(undefined)
+  const [tempCheckOut, setTempCheckOut] = useState<Date | undefined>(undefined)
 
   useEffect(() => {
     const loadHotelDetails = async () => {
@@ -86,7 +92,38 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
       totalPrice: boardingOption?.totalPrice || room.totalPrice,
     }
     
-    onBookRoom(roomWithBoarding)
+    if (!searchParams.checkIn || !searchParams.checkOut) {
+      setSelectedRoomForBooking(roomWithBoarding)
+      setTempCheckIn(addDays(new Date(), 1))
+      setTempCheckOut(addDays(new Date(), 2))
+      setShowDateDialog(true)
+    } else {
+      onBookRoom(roomWithBoarding)
+    }
+  }
+
+  const handleConfirmDates = () => {
+    if (!tempCheckIn || !tempCheckOut) {
+      toast.error('Veuillez sélectionner les dates d\'arrivée et de départ')
+      return
+    }
+    
+    if (tempCheckOut <= tempCheckIn) {
+      toast.error('La date de départ doit être après la date d\'arrivée')
+      return
+    }
+
+    setSearchParams({
+      ...searchParams,
+      checkIn: tempCheckIn,
+      checkOut: tempCheckOut,
+    })
+    
+    setShowDateDialog(false)
+    
+    if (selectedRoomForBooking) {
+      onBookRoom(selectedRoomForBooking)
+    }
   }
 
   if (loading || !hotel) {
@@ -375,6 +412,85 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
           </div>
         </div>
       </div>
+
+      <Dialog open={showDateDialog} onOpenChange={setShowDateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sélectionnez vos dates de séjour</DialogTitle>
+            <DialogDescription>
+              Choisissez vos dates d'arrivée et de départ pour finaliser votre réservation
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Date d'arrivée</Label>
+              <div className="border rounded-lg p-2">
+                <CalendarComponent
+                  mode="single"
+                  selected={tempCheckIn}
+                  onSelect={setTempCheckIn}
+                  disabled={(date) => date < new Date()}
+                  locale={fr}
+                  className="mx-auto"
+                />
+              </div>
+              {tempCheckIn && (
+                <p className="text-sm text-muted-foreground text-center">
+                  Arrivée: {format(tempCheckIn, 'dd MMMM yyyy', { locale: fr })}
+                </p>
+              )}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Date de départ</Label>
+              <div className="border rounded-lg p-2">
+                <CalendarComponent
+                  mode="single"
+                  selected={tempCheckOut}
+                  onSelect={setTempCheckOut}
+                  disabled={(date) => !tempCheckIn || date <= tempCheckIn}
+                  locale={fr}
+                  className="mx-auto"
+                />
+              </div>
+              {tempCheckOut && (
+                <p className="text-sm text-muted-foreground text-center">
+                  Départ: {format(tempCheckOut, 'dd MMMM yyyy', { locale: fr })}
+                </p>
+              )}
+            </div>
+
+            {tempCheckIn && tempCheckOut && (
+              <div className="bg-muted p-4 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground mb-1">Durée du séjour</p>
+                <p className="text-2xl font-bold text-primary">
+                  {Math.ceil((tempCheckOut.getTime() - tempCheckIn.getTime()) / (1000 * 60 * 60 * 24))} nuit{Math.ceil((tempCheckOut.getTime() - tempCheckIn.getTime()) / (1000 * 60 * 60 * 24)) > 1 ? 's' : ''}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowDateDialog(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleConfirmDates}
+                disabled={!tempCheckIn || !tempCheckOut}
+              >
+                Confirmer
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

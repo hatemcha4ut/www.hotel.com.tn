@@ -13,11 +13,11 @@ This is a full-featured e-commerce platform with multiple user journeys (guest b
 ## Essential Features
 
 ### Homepage Hero Search Widget
-- **Functionality**: Dynamic search form with toggle between city and hotel name search modes, date pickers with validation, guest configuration builder
+- **Functionality**: Dynamic search form with toggle between city and hotel name search modes, optional date pickers, guest configuration builder
 - **Purpose**: Primary conversion point - allows users to immediately begin their hotel search journey
 - **Trigger**: Page load (auto-focused), user interaction with search parameters
-- **Progression**: Select search mode → Choose location/hotel → Select dates (check-in validates check-out minimum) → Configure guests (adults/children/rooms) → Click search → Navigate to results page with query parameters
-- **Success criteria**: Search executes with all required parameters, invalid states are prevented (can't select check-out before check-in), guest configuration accurately captures party composition
+- **Progression**: Select search mode → Choose location/hotel → Optionally select dates (check-in validates check-out minimum) → Configure guests (adults/children/rooms) → Click search → Navigate to results page with query parameters
+- **Success criteria**: Search executes with location/hotel and guest parameters (dates optional), invalid states are prevented when dates are provided (can't select check-out before check-in), guest configuration accurately captures party composition. If dates not selected, displays prices for next-day check-in by default.
 
 ### Hotel Search & Filtering
 - **Functionality**: Display paginated hotel results with sidebar filters (price, stars, amenities, boarding type) and sort controls
@@ -27,18 +27,18 @@ This is a full-featured e-commerce platform with multiple user journeys (guest b
 - **Success criteria**: Filters work in combination, results update smoothly, filters persist during navigation, "no results" state appears when appropriate
 
 ### Multi-Step Booking Process
-- **Functionality**: Four-step wizard (Guest Details → Review → Payment → Confirmation) with progress indicator and validation at each step
-- **Purpose**: Collect necessary information while breaking complex form into digestible chunks
-- **Trigger**: User clicks "Select Room" on hotel details page
-- **Progression**: Guest form with validation → Review summary with editable fields → Payment method selection and card form → Submit payment → Success confirmation with booking reference
-- **Success criteria**: Cannot proceed with invalid data, can navigate backward without losing data, booking reference generated on completion, confirmation email sent
+- **Functionality**: Four-step wizard (Guest Details → Review → Payment → Confirmation) with progress indicator and validation at each step. Includes option to create account or continue as guest. Voucher generation includes hotel name, check-in date/time, check-out date/time, number of guests, booker name, and main occupant name.
+- **Purpose**: Collect necessary information while breaking complex form into digestible chunks, with comprehensive voucher for hotel presentation
+- **Trigger**: User clicks "Select Room" on hotel details page (after confirming dates if needed)
+- **Progression**: Guest form with validation → Review summary (shows booking details first, then choice to create account or continue as guest, then personal info) → Payment via ClicToPay.com.tn integration → Success confirmation with booking reference and downloadable/viewable voucher compatible with Apple Wallet and Google Wallet
+- **Success criteria**: Cannot proceed with invalid data, can navigate backward without losing data, booking reference generated on completion, voucher includes all required information (hotel name, check-in date & time from hotel, check-out date & time from hotel, guest count, booker name, main occupant), wallet passes properly formatted with barcode
 
 ### Hotel Details Deep Dive
-- **Functionality**: Comprehensive hotel page with image gallery, amenities grid, location map, reviews, and available rooms table with pricing
-- **Purpose**: Provide all information needed to make booking decision
+- **Functionality**: Comprehensive hotel page with image gallery, amenities grid, location map, reviews, and available rooms table with boarding type selection. When user selects a boarding type and clicks to book without having selected dates in initial search, a date selection dialog appears requesting check-in/check-out dates (defaulting to next day for check-in).
+- **Purpose**: Provide all information needed to make booking decision and ensure dates are confirmed before proceeding to payment
 - **Trigger**: Click hotel card from search results
-- **Progression**: Page loads with hotel data → User views images (lightbox gallery) → Scrolls through amenities and reviews → Checks available rooms for selected dates → Clicks "Select Room" → Proceeds to booking
-- **Success criteria**: All hotel information displayed clearly, images load properly in gallery, room availability reflects search dates, pricing matches selected options
+- **Progression**: Page loads with hotel data → User views images (lightbox gallery) → Scrolls through amenities and reviews → Selects boarding type per room → Checks available rooms for selected dates → Clicks "Select Room" → If dates not yet selected, date picker dialog appears with default next-day check-in → User confirms dates → Proceeds to booking
+- **Success criteria**: All hotel information displayed clearly, images load properly in gallery, boarding type selection updates pricing correctly, date dialog appears when needed, dates are validated before booking proceeds, pricing matches selected boarding options and dates
 
 ### User Account & Booking Management
 - **Functionality**: Authentication system (login/register/reset) and dashboard showing upcoming/past/cancelled bookings with voucher downloads
