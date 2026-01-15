@@ -1,0 +1,90 @@
+export interface Hotel {
+  id: string
+  name: string
+  city: string
+  address: string
+  stars: number
+  rating: number
+  reviewCount: number
+  description: string
+  image: string
+  images: string[]
+  price: number
+  amenities: string[]
+  boardingType: string[]
+  latitude?: number
+  longitude?: number
+}
+
+export interface City {
+  id: string
+  name: string
+  country: string
+}
+
+export interface SearchParams {
+  searchMode: 'city' | 'hotel'
+  cityId?: string
+  hotelName?: string
+  checkIn: Date | null
+  checkOut: Date | null
+  adults: number
+  children: number[]
+  rooms: number
+}
+
+export interface Room {
+  id: string
+  name: string
+  bedConfig: string
+  maxOccupancy: number
+  size: number
+  boardingType: string
+  amenities: string[]
+  cancellationPolicy: string
+  pricePerNight: number
+  totalPrice: number
+  image: string
+}
+
+export interface GuestDetails {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  countryCode: string
+  nationality: string
+  specialRequests?: string
+}
+
+export interface Booking {
+  id: string
+  reference: string
+  hotel: Hotel
+  room: Room
+  checkIn: string
+  checkOut: string
+  guests: GuestDetails
+  totalPrice: number
+  status: 'confirmed' | 'pending' | 'cancelled'
+  createdAt: string
+}
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  phone: string
+  token: string
+}
+
+export interface FilterOptions {
+  priceRange: [number, number]
+  stars: number[]
+  boardingTypes: string[]
+  amenities: string[]
+  maxDistance: number
+}
+
+export type SortOption = 'price-asc' | 'price-desc' | 'stars' | 'rating' | 'distance'
+export type Language = 'fr' | 'en' | 'ar'

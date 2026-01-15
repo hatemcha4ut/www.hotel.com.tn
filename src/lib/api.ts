@@ -1,0 +1,316 @@
+import { Hotel, City, Room } from '@/types'
+
+const API_BASE = 'https://admin.mygo.co/api/hotel/'
+const API_LOGIN = 'XMLAMC'
+const API_PASSWORD = '-G9hkxDSXXYUtwcx73H6'
+
+const authHeader = 'Basic ' + btoa(`${API_LOGIN}:${API_PASSWORD}`)
+
+const mockCities: City[] = [
+  { id: '1', name: 'Tunis', country: 'Tunisia' },
+  { id: '2', name: 'Sousse', country: 'Tunisia' },
+  { id: '3', name: 'Hammamet', country: 'Tunisia' },
+  { id: '4', name: 'Djerba', country: 'Tunisia' },
+  { id: '5', name: 'Monastir', country: 'Tunisia' },
+  { id: '6', name: 'Mahdia', country: 'Tunisia' },
+  { id: '7', name: 'Tozeur', country: 'Tunisia' },
+  { id: '8', name: 'Sfax', country: 'Tunisia' },
+]
+
+const mockHotels: Hotel[] = [
+  {
+    id: '1',
+    name: 'Hôtel La Badira',
+    city: 'Hammamet',
+    address: 'Zone Touristique, Hammamet',
+    stars: 5,
+    rating: 4.8,
+    reviewCount: 342,
+    description: 'Un complexe hôtelier de luxe sur la plage avec spa de classe mondiale, plusieurs restaurants gastronomiques et architecture mauresque élégante.',
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&h=600&fit=crop',
+    ],
+    price: 280,
+    amenities: ['WiFi', 'Piscine', 'Spa', 'Restaurant', 'Bar', 'Plage privée', 'Salle de sport', 'Parking'],
+    boardingType: ['Petit-déjeuner', 'Demi-pension', 'Pension complète', 'All Inclusive'],
+    latitude: 36.4,
+    longitude: 10.62,
+  },
+  {
+    id: '2',
+    name: 'Mövenpick Resort & Marine Spa',
+    city: 'Sousse',
+    address: 'BP 71 Port El Kantaoui, Sousse',
+    stars: 5,
+    rating: 4.6,
+    reviewCount: 567,
+    description: 'Resort luxueux en bord de mer offrant des chambres élégantes, un spa marin primé et un accès direct à la marina.',
+    image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1568084680786-a84f91d1153c?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&h=600&fit=crop',
+    ],
+    price: 320,
+    amenities: ['WiFi', 'Piscine', 'Spa', 'Restaurant', 'Club enfants', 'Plage privée', 'Tennis'],
+    boardingType: ['Petit-déjeuner', 'Demi-pension', 'All Inclusive'],
+    latitude: 35.895,
+    longitude: 10.605,
+  },
+  {
+    id: '3',
+    name: 'Dar El Jeld Hotel & Spa',
+    city: 'Tunis',
+    address: '5-10 Rue Dar El Jeld, Medina, Tunis',
+    stars: 5,
+    rating: 4.9,
+    reviewCount: 189,
+    description: 'Boutique hôtel historique dans la médina avec architecture traditionnelle, spa hammam et cuisine tunisienne authentique.',
+    image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop',
+    ],
+    price: 195,
+    amenities: ['WiFi', 'Spa', 'Restaurant', 'Hammam', 'Terrasse', 'Parking'],
+    boardingType: ['Petit-déjeuner', 'Demi-pension'],
+    latitude: 36.8065,
+    longitude: 10.1815,
+  },
+  {
+    id: '4',
+    name: 'Radisson Blu Palace Resort & Thalasso',
+    city: 'Djerba',
+    address: 'Zone Touristique Houmt Souk, Djerba',
+    stars: 5,
+    rating: 4.7,
+    reviewCount: 823,
+    description: 'Resort tout compris avec centre de thalassothérapie, multiple piscines et accès direct à une plage de sable blanc.',
+    image: 'https://images.unsplash.com/photo-1549294413-26f195200c16?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1549294413-26f195200c16?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1602002418816-5c0aeef426aa?w=800&h=600&fit=crop',
+    ],
+    price: 245,
+    amenities: ['WiFi', 'Piscine', 'Spa', 'Restaurant', 'Bar', 'Plage privée', 'Club enfants', 'Animation'],
+    boardingType: ['Demi-pension', 'Pension complète', 'All Inclusive'],
+    latitude: 33.8076,
+    longitude: 10.8451,
+  },
+  {
+    id: '5',
+    name: 'Iberostar Selection Kuriat Palace',
+    city: 'Monastir',
+    address: 'Route Touristique Skanes, Monastir',
+    stars: 5,
+    rating: 4.5,
+    reviewCount: 445,
+    description: 'Complexe familial all-inclusive avec parc aquatique, plusieurs restaurants à thème et animations quotidiennes.',
+    image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1562790351-d273a961e0e9?w=800&h=600&fit=crop',
+    ],
+    price: 210,
+    amenities: ['WiFi', 'Piscine', 'Parc aquatique', 'Restaurant', 'Club enfants', 'Plage', 'Animation', 'Salle de sport'],
+    boardingType: ['All Inclusive'],
+    latitude: 35.7753,
+    longitude: 10.8263,
+  },
+  {
+    id: '6',
+    name: 'The Residence Tunis',
+    city: 'Tunis',
+    address: 'Les Côtes de Carthage, Gammarth, Tunis',
+    stars: 5,
+    rating: 4.8,
+    reviewCount: 276,
+    description: 'Hôtel de luxe en bord de mer inspiré du palais tunisien du 19ème siècle avec jardins tropicaux luxuriants.',
+    image: 'https://images.unsplash.com/photo-1559508551-44bff1de756b?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1559508551-44bff1de756b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1584132915807-e9d0c96a3702?w=800&h=600&fit=crop',
+    ],
+    price: 350,
+    amenities: ['WiFi', 'Piscine', 'Spa', 'Restaurant', 'Bar', 'Plage privée', 'Golf', 'Casino'],
+    boardingType: ['Petit-déjeuner', 'Demi-pension', 'Pension complète'],
+    latitude: 37.0892,
+    longitude: 10.2896,
+  },
+  {
+    id: '7',
+    name: 'Hasdrubal Thalassa & Spa',
+    city: 'Hammamet',
+    address: 'Route Touristique, Yasmine Hammamet',
+    stars: 5,
+    rating: 4.6,
+    reviewCount: 521,
+    description: 'Resort en bord de mer avec centre de thalassothérapie primé, piscines chauffées et architecture contemporaine.',
+    image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&h=600&fit=crop',
+    ],
+    price: 265,
+    amenities: ['WiFi', 'Piscine', 'Spa', 'Restaurant', 'Thalasso', 'Plage privée', 'Salle de sport'],
+    boardingType: ['Petit-déjeuner', 'Demi-pension', 'Pension complète', 'All Inclusive'],
+    latitude: 36.4,
+    longitude: 10.6,
+  },
+  {
+    id: '8',
+    name: 'Diar Lemdina Hotel',
+    city: 'Hammamet',
+    address: 'Route Touristique, Hammamet',
+    stars: 4,
+    rating: 4.3,
+    reviewCount: 612,
+    description: 'Hôtel authentique conçu comme une médina tunisienne traditionnelle avec architecture locale et ambiance chaleureuse.',
+    image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1566195992011-5f6b21e539aa?w=800&h=600&fit=crop',
+    ],
+    price: 145,
+    amenities: ['WiFi', 'Piscine', 'Restaurant', 'Bar', 'Animation', 'Plage'],
+    boardingType: ['Petit-déjeuner', 'Demi-pension', 'All Inclusive'],
+    latitude: 36.4,
+    longitude: 10.58,
+  },
+  {
+    id: '9',
+    name: 'Concorde Green Park Palace',
+    city: 'Tunis',
+    address: 'BP 57 Les Berges du Lac, Tunis',
+    stars: 5,
+    rating: 4.4,
+    reviewCount: 334,
+    description: 'Hôtel moderne dans le quartier des affaires avec installations de conférence, spa et restaurants gastronomiques.',
+    image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&h=600&fit=crop',
+    ],
+    price: 185,
+    amenities: ['WiFi', 'Piscine', 'Spa', 'Restaurant', 'Salle de sport', 'Parking', 'Centre d\'affaires'],
+    boardingType: ['Petit-déjeuner', 'Demi-pension'],
+    latitude: 36.8395,
+    longitude: 10.2388,
+  },
+  {
+    id: '10',
+    name: 'Vincci El Mansour',
+    city: 'Mahdia',
+    address: 'Zone Touristique, BP 68, Mahdia',
+    stars: 4,
+    rating: 4.5,
+    reviewCount: 489,
+    description: 'Resort all-inclusive avec animation dynamique, plusieurs piscines et accès direct à une plage de sable fin.',
+    image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&h=600&fit=crop',
+    ],
+    price: 175,
+    amenities: ['WiFi', 'Piscine', 'Restaurant', 'Bar', 'Animation', 'Plage', 'Club enfants'],
+    boardingType: ['All Inclusive'],
+    latitude: 35.5047,
+    longitude: 11.0622,
+  },
+]
+
+const mockRooms: Room[] = [
+  {
+    id: 'r1',
+    name: 'Chambre Standard Double',
+    bedConfig: '1 lit double',
+    maxOccupancy: 2,
+    size: 28,
+    boardingType: 'Petit-déjeuner',
+    amenities: ['WiFi', 'Climatisation', 'TV', 'Minibar', 'Coffre-fort'],
+    cancellationPolicy: 'Annulation gratuite jusqu\'à 7 jours avant l\'arrivée',
+    pricePerNight: 120,
+    totalPrice: 360,
+    image: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=400&h=300&fit=crop',
+  },
+  {
+    id: 'r2',
+    name: 'Chambre Supérieure Vue Mer',
+    bedConfig: '1 lit double ou 2 lits simples',
+    maxOccupancy: 3,
+    size: 35,
+    boardingType: 'Demi-pension',
+    amenities: ['WiFi', 'Climatisation', 'TV', 'Minibar', 'Coffre-fort', 'Balcon', 'Vue mer'],
+    cancellationPolicy: 'Annulation gratuite jusqu\'à 7 jours avant l\'arrivée',
+    pricePerNight: 180,
+    totalPrice: 540,
+    image: 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=400&h=300&fit=crop',
+  },
+  {
+    id: 'r3',
+    name: 'Suite Junior',
+    bedConfig: '1 lit king size',
+    maxOccupancy: 4,
+    size: 45,
+    boardingType: 'All Inclusive',
+    amenities: ['WiFi', 'Climatisation', 'TV', 'Minibar', 'Coffre-fort', 'Balcon', 'Vue mer', 'Salon', 'Baignoire'],
+    cancellationPolicy: 'Annulation gratuite jusqu\'à 14 jours avant l\'arrivée',
+    pricePerNight: 280,
+    totalPrice: 840,
+    image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
+  },
+]
+
+export const api = {
+  getCities: async (): Promise<City[]> => {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    return mockCities
+  },
+
+  searchHotels: async (params: {
+    cityId?: string
+    hotelName?: string
+    checkIn?: string
+    checkOut?: string
+  }): Promise<Hotel[]> => {
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    let filtered = [...mockHotels]
+    
+    if (params.cityId) {
+      const city = mockCities.find(c => c.id === params.cityId)
+      if (city) {
+        filtered = filtered.filter(h => h.city === city.name)
+      }
+    }
+    
+    if (params.hotelName) {
+      const searchTerm = params.hotelName.toLowerCase()
+      filtered = filtered.filter(h => 
+        h.name.toLowerCase().includes(searchTerm)
+      )
+    }
+    
+    return filtered
+  },
+
+  getHotelDetails: async (hotelId: string): Promise<Hotel | null> => {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    return mockHotels.find(h => h.id === hotelId) || null
+  },
+
+  getAvailableRooms: async (hotelId: string): Promise<Room[]> => {
+    await new Promise(resolve => setTimeout(resolve, 400))
+    return mockRooms
+  },
+
+  createBooking: async (bookingData: any): Promise<{ reference: string }> => {
+    await new Promise(resolve => setTimeout(resolve, 800))
+    const reference = 'TN' + Date.now().toString().slice(-8)
+    return { reference }
+  },
+}

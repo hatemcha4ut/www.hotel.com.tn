@@ -1,0 +1,286 @@
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import { Card } from '@/components/ui/card'
+import { MagnifyingGlass, CalendarBlank, Users, Minus, Plus } from '@phosphor-icons/react'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { useApp } from '@/contexts/AppContext'
+import { t } from '@/lib/translations'
+import { api } from '@/lib/api'
+import { City } from '@/types'
+
+interface SearchWidgetProps {
+  onSearch: () => void
+}
+
+export function SearchWidget({ onSearch }: SearchWidgetProps) {
+  const { language, searchParams, setSearchParams } = useApp()
+  const [cities, setCities] = useState<City[]>([])
+
+  useEffect(() => {
+    api.getCities().then(setCities)
+  }, [])
+
+  const handleAdultsChange = (delta: number) => {
+    setSearchParams({
+      ...searchParams,
+      adults: Math.max(1, searchParams.adults + delta),
+    })
+  }
+
+  const handleChildrenChange = (delta: number) => {
+    const currentCount = searchParams.children.length
+    if (delta > 0) {
+      setSearchParams({
+        ...searchParams,
+        children: [...searchParams.children, 5],
+      })
+    } else if (delta < 0 && currentCount > 0) {
+      setSearchParams({
+        ...searchParams,
+        children: searchParams.children.slice(0, -1),
+      })
+    }
+  }
+
+  const handleRoomsChange = (delta: number) => {
+    setSearchParams({
+      ...searchParams,
+      rooms: Math.max(1, searchParams.rooms + delta),
+    })
+  }
+
+  const guestsText = `${searchParams.adults} ${searchParams.adults > 1 ? 'adultes' : 'adulte'}${
+    searchParams.children.length > 0 ? `, ${searchParams.children.length} ${searchParams.children.length > 1 ? 'enfants' : 'enfant'}` : ''
+  }`
+
+  return (
+    <Card className="p-6 shadow-xl bg-card/95 backdrop-blur">
+      <div className="flex items-center gap-2 mb-6">
+        <Button
+          variant={searchParams.searchMode === 'city' ? 'default' : 'outline'}
+          onClick={() => setSearchParams({ ...searchParams, searchMode: 'city' })}
+          className="flex-1"
+        >
+          {t('search.searchByCity', language)}
+        </Button>
+        <Button
+          variant={searchParams.searchMode === 'hotel' ? 'default' : 'outline'}
+          onClick={() => setSearchParams({ ...searchParams, searchMode: 'hotel' })}
+          className="flex-1"
+        >
+          {t('search.searchByHotel', language)}
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {searchParams.searchMode === 'city' ? (
+          <div className="space-y-2">
+            <Label>{t('search.selectCity', language)}</Label>
+            <Select
+              value={searchParams.cityId}
+              onValueChange={(value) => setSearchParams({ ...searchParams, cityId: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('search.selectCity', language)} />
+              </SelectTrigger>
+              <SelectContent>
+                {cities.map((city) => (
+                  <SelectItem key={city.id} value={city.id}>
+                    {city.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label>{t('search.hotelName', language)}</Label>
+            <Input
+              placeholder={t('search.hotelName', language)}
+              value={searchParams.hotelName || ''}
+              onChange={(e) => setSearchParams({ ...searchParams, hotelName: e.target.value })}
+            />
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label>{t('search.checkIn', language)}</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                <CalendarBlank className="mr-2 h-4 w-4" />
+                {searchParams.checkIn ? format(searchParams.checkIn, 'dd MMM yyyy', { locale: fr }) : 'Sélectionner'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={searchParams.checkIn || undefined}
+                onSelect={(date) => setSearchParams({ ...searchParams, checkIn: date || null })}
+                disabled={(date) => date < new Date()}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <Label>{t('search.checkOut', language)}</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                <CalendarBlank className="mr-2 h-4 w-4" />
+                {searchParams.checkOut ? format(searchParams.checkOut, 'dd MMM yyyy', { locale: fr }) : 'Sélectionner'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={searchParams.checkOut || undefined}
+                onSelect={(date) => setSearchParams({ ...searchParams, checkOut: date || null })}
+                disabled={(date) => {
+                  if (!searchParams.checkIn) return date < new Date()
+                  const minCheckOut = new Date(searchParams.checkIn)
+                  minCheckOut.setDate(minCheckOut.getDate() + 1)
+                  return date < minCheckOut
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <Label>{t('search.guests', language)}</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                <Users className="mr-2 h-4 w-4" />
+                {guestsText}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="start">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{t('search.adults', language)}</div>
+                    <div className="text-sm text-muted-foreground">13 ans et plus</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleAdultsChange(-1)}
+                      disabled={searchParams.adults <= 1}
+                    >
+                      <Minus size={16} />
+                    </Button>
+                    <span className="w-8 text-center font-medium">{searchParams.adults}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleAdultsChange(1)}
+                    >
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{t('search.children', language)}</div>
+                    <div className="text-sm text-muted-foreground">0-12 ans</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleChildrenChange(-1)}
+                      disabled={searchParams.children.length === 0}
+                    >
+                      <Minus size={16} />
+                    </Button>
+                    <span className="w-8 text-center font-medium">{searchParams.children.length}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleChildrenChange(1)}
+                    >
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{t('search.rooms', language)}</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleRoomsChange(-1)}
+                      disabled={searchParams.rooms <= 1}
+                    >
+                      <Minus size={16} />
+                    </Button>
+                    <span className="w-8 text-center font-medium">{searchParams.rooms}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleRoomsChange(1)}
+                    >
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      <Button size="lg" className="w-full mt-6" onClick={onSearch}>
+        <MagnifyingGlass size={20} className="mr-2" />
+        {t('search.searchHotels', language)}
+      </Button>
+    </Card>
+  )
+}
+
+export function Hero({ onSearch }: { onSearch: () => void }) {
+  const { language } = useApp()
+
+  return (
+    <section className="relative min-h-[600px] flex items-center justify-center hero-pattern">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/20" />
+      
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
+            {t('hero.title', language)}
+          </h1>
+          <p className="text-xl text-white/90 max-w-2xl mx-auto">
+            {t('hero.subtitle', language)}
+          </p>
+        </div>
+
+        <div className="max-w-5xl mx-auto">
+          <SearchWidget onSearch={onSearch} />
+        </div>
+      </div>
+    </section>
+  )
+}
