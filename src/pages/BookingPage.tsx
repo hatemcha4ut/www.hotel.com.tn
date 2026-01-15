@@ -35,7 +35,7 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
     email: '',
     phone: '',
     countryCode: '+216',
-    nationality: '',
+    nationality: 'TN',
     specialRequests: '',
   })
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -53,6 +53,18 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
         searchParams,
         guestDetails,
       })
+      
+      const bookingData = {
+        reference: result.reference,
+        hotel,
+        room,
+        searchParams,
+        guestDetails,
+        nights,
+        totalAmount
+      }
+      await window.spark.kv.set(`booking-${result.reference}`, bookingData)
+      
       toast.success('Réservation confirmée!')
       onComplete(result.reference)
     } catch (error) {
@@ -273,7 +285,7 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Récapitulatif de la réservation</CardTitle>
+                    <CardTitle>Résumé du séjour</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-4">
@@ -318,6 +330,10 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                             <span className="text-muted-foreground">Durée: </span>
                             {nights} nuit{nights > 1 ? 's' : ''}
                           </div>
+                          <div>
+                            <span className="text-muted-foreground">Nombre d'hôtes: </span>
+                            {searchParams.rooms.reduce((sum, room) => sum + room.adults + room.children.length, 0)} personne(s)
+                          </div>
                         </div>
                       </>
                     )}
@@ -348,7 +364,7 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Informations du voyageur</CardTitle>
+                    <CardTitle>Informations personnelles</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -358,6 +374,9 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                       <p className="text-sm text-muted-foreground">{guestDetails.email}</p>
                       <p className="text-sm text-muted-foreground">
                         {guestDetails.countryCode} {guestDetails.phone}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Nationalité: {guestDetails.nationality === 'TN' ? 'Tunisienne' : guestDetails.nationality === 'FR' ? 'Française' : guestDetails.nationality === 'DZ' ? 'Algérienne' : guestDetails.nationality === 'MA' ? 'Marocaine' : guestDetails.nationality}
                       </p>
                     </div>
                   </CardContent>

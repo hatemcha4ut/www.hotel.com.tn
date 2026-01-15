@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { CheckCircle, Download, Eye, Printer, Wallet } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
 
 interface ConfirmationPageProps {
   reference: string
@@ -13,11 +15,26 @@ interface ConfirmationPageProps {
 
 export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
   const [showVoucher, setShowVoucher] = useState(false)
+  const [bookingData, setBookingData] = useState<any>(null)
+
+  useEffect(() => {
+    const loadBookingData = async () => {
+      try {
+        const data = await window.spark.kv.get(`booking-${reference}`)
+        if (data) {
+          setBookingData(data)
+        }
+      } catch (error) {
+        console.error('Error loading booking data:', error)
+      }
+    }
+    loadBookingData()
+  }, [reference])
 
   const handleDownloadVoucher = () => {
     toast.success('Téléchargement du voucher...')
     const barcodeData = generateBarcode(reference)
-    const voucherContent = generateVoucherContent(barcodeData)
+    const voucherContent = generateVoucherContent(barcodeData, bookingData)
     const blob = new Blob([voucherContent], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -66,14 +83,30 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
   }
 
   const handleAddToGoogleWallet = () => {
+    const hotelName = bookingData?.hotel?.name || 'Hotel Cities by American Tours'
+    const checkIn = bookingData?.searchParams?.checkIn 
+      ? format(new Date(bookingData.searchParams.checkIn), 'dd MMMM yyyy', { locale: fr })
+      : 'À confirmer'
+    const checkOut = bookingData?.searchParams?.checkOut 
+      ? format(new Date(bookingData.searchParams.checkOut), 'dd MMMM yyyy', { locale: fr })
+      : 'À confirmer'
+    const guestCount = bookingData?.searchParams?.rooms
+      ? bookingData.searchParams.rooms.reduce((sum: number, room: any) => sum + room.adults + room.children.length, 0)
+      : 0
+    const guestName = bookingData?.guestDetails 
+      ? `${bookingData.guestDetails.firstName} ${bookingData.guestDetails.lastName}`
+      : ''
+    
     const passData = {
       reference,
       barcode: generateBarcode(reference),
       type: 'hotel-booking',
       dateIssued: new Date().toISOString(),
-      hotelName: 'Hotel Cities by American Tours',
-      checkIn: 'À confirmer',
-      checkOut: 'À confirmer'
+      hotelName,
+      checkIn,
+      checkOut,
+      guestCount: `${guestCount} personne(s)`,
+      guestName
     }
     
     const jsonString = JSON.stringify(passData, null, 2)
@@ -91,14 +124,30 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
   }
 
   const handleAddToAppleWallet = () => {
+    const hotelName = bookingData?.hotel?.name || 'Hotel Cities by American Tours'
+    const checkIn = bookingData?.searchParams?.checkIn 
+      ? format(new Date(bookingData.searchParams.checkIn), 'dd MMMM yyyy', { locale: fr })
+      : 'À confirmer'
+    const checkOut = bookingData?.searchParams?.checkOut 
+      ? format(new Date(bookingData.searchParams.checkOut), 'dd MMMM yyyy', { locale: fr })
+      : 'À confirmer'
+    const guestCount = bookingData?.searchParams?.rooms
+      ? bookingData.searchParams.rooms.reduce((sum: number, room: any) => sum + room.adults + room.children.length, 0)
+      : 0
+    const guestName = bookingData?.guestDetails 
+      ? `${bookingData.guestDetails.firstName} ${bookingData.guestDetails.lastName}`
+      : ''
+    
     const passData = {
       reference,
       barcode: generateBarcode(reference),
       type: 'hotel-booking',
       dateIssued: new Date().toISOString(),
-      hotelName: 'Hotel Cities by American Tours',
-      checkIn: 'À confirmer',
-      checkOut: 'À confirmer',
+      hotelName,
+      checkIn,
+      checkOut,
+      guestCount: `${guestCount} personne(s)`,
+      guestName,
       organizationName: 'American Tours',
       description: 'Voucher de réservation d\'hôtel'
     }
@@ -121,7 +170,24 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
     window.print()
   }
 
-  const generateVoucherContent = (barcodeData: string) => {
+  const generateVoucherContent = (barcodeData: string, booking: any) => {
+    const hotelName = booking?.hotel?.name || 'À compléter'
+    const checkInDate = booking?.searchParams?.checkIn 
+      ? format(new Date(booking.searchParams.checkIn), 'dd MMMM yyyy', { locale: fr })
+      : 'À compléter'
+    const checkOutDate = booking?.searchParams?.checkOut 
+      ? format(new Date(booking.searchParams.checkOut), 'dd MMMM yyyy', { locale: fr })
+      : 'À compléter'
+    const guestCount = booking?.searchParams?.rooms
+      ? booking.searchParams.rooms.reduce((sum: number, room: any) => sum + room.adults + room.children.length, 0)
+      : 0
+    const bookedBy = booking?.guestDetails 
+      ? `${booking.guestDetails.firstName} ${booking.guestDetails.lastName}`
+      : 'À compléter'
+    const mainOccupant = booking?.guestDetails 
+      ? `${booking.guestDetails.firstName} ${booking.guestDetails.lastName}`
+      : 'À compléter'
+    
     return `
       <!DOCTYPE html>
       <html>
@@ -163,21 +229,33 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
             <div class="info-label">Statut:</div>
             <div class="info-value">Confirmé</div>
           </div>
+          <div class="info-row">
+            <div class="info-label">Réservé par:</div>
+            <div class="info-value">${bookedBy}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Occupant principal:</div>
+            <div class="info-value">${mainOccupant}</div>
+          </div>
         </div>
         
         <div class="section">
           <div class="section-title">Détails du séjour</div>
           <div class="info-row">
             <div class="info-label">Hôtel:</div>
-            <div class="info-value">À compléter</div>
+            <div class="info-value">${hotelName}</div>
           </div>
           <div class="info-row">
             <div class="info-label">Date d'arrivée:</div>
-            <div class="info-value">À compléter</div>
+            <div class="info-value">${checkInDate}</div>
           </div>
           <div class="info-row">
             <div class="info-label">Date de départ:</div>
-            <div class="info-value">À compléter</div>
+            <div class="info-value">${checkOutDate}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Nombre d'hôtes:</div>
+            <div class="info-value">${guestCount} personne(s)</div>
           </div>
         </div>
         
@@ -198,6 +276,22 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
 
   const VoucherPreview = () => {
     const barcodeData = generateBarcode(reference)
+    const hotelName = bookingData?.hotel?.name || 'À compléter'
+    const checkInDate = bookingData?.searchParams?.checkIn 
+      ? format(new Date(bookingData.searchParams.checkIn), 'dd MMMM yyyy', { locale: fr })
+      : 'À compléter'
+    const checkOutDate = bookingData?.searchParams?.checkOut 
+      ? format(new Date(bookingData.searchParams.checkOut), 'dd MMMM yyyy', { locale: fr })
+      : 'À compléter'
+    const guestCount = bookingData?.searchParams?.rooms
+      ? bookingData.searchParams.rooms.reduce((sum: number, room: any) => sum + room.adults + room.children.length, 0)
+      : 0
+    const bookedBy = bookingData?.guestDetails 
+      ? `${bookingData.guestDetails.firstName} ${bookingData.guestDetails.lastName}`
+      : 'À compléter'
+    const mainOccupant = bookingData?.guestDetails 
+      ? `${bookingData.guestDetails.firstName} ${bookingData.guestDetails.lastName}`
+      : 'À compléter'
     
     return (
       <div className="space-y-6 p-6 bg-white">
@@ -222,6 +316,14 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
               <span className="font-semibold">Statut:</span>
               <span className="text-green-600 font-medium">Confirmé</span>
             </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="font-semibold">Réservé par:</span>
+              <span>{bookedBy}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="font-semibold">Occupant principal:</span>
+              <span>{mainOccupant}</span>
+            </div>
           </div>
         </div>
 
@@ -230,15 +332,19 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 border-b">
               <span className="font-semibold">Hôtel:</span>
-              <span>À compléter</span>
+              <span>{hotelName}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
               <span className="font-semibold">Date d'arrivée:</span>
-              <span>À compléter</span>
+              <span>{checkInDate}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
               <span className="font-semibold">Date de départ:</span>
-              <span>À compléter</span>
+              <span>{checkOutDate}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="font-semibold">Nombre d'hôtes:</span>
+              <span>{guestCount} personne(s)</span>
             </div>
           </div>
         </div>
