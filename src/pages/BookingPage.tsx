@@ -374,30 +374,30 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                       </p>
                       <Button 
                         variant="outline" 
-                        className="w-full justify-start gap-3 h-auto py-4 px-4"
+                        className="w-full justify-start gap-3 h-auto py-3 px-3 sm:py-4 sm:px-4"
                         onClick={handleCreateAccount}
                       >
-                        <div className="flex-shrink-0">
-                          <UserPlus size={24} />
+                        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserPlus size={20} className="text-primary sm:w-6 sm:h-6" />
                         </div>
                         <div className="text-left flex-1 min-w-0">
-                          <div className="font-semibold">Créer un compte</div>
-                          <div className="text-xs text-muted-foreground break-words">
+                          <div className="font-semibold text-sm sm:text-base">Créer un compte</div>
+                          <div className="text-xs text-muted-foreground break-words leading-relaxed">
                             Suivez vos réservations et bénéficiez d'offres exclusives
                           </div>
                         </div>
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full justify-start gap-3 h-auto py-4 px-4"
+                        className="w-full justify-start gap-3 h-auto py-3 px-3 sm:py-4 sm:px-4"
                         onClick={handleContinueAsGuest}
                       >
-                        <div className="flex-shrink-0">
-                          <User size={24} />
+                        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                          <User size={20} className="text-accent sm:w-6 sm:h-6" />
                         </div>
                         <div className="text-left flex-1 min-w-0">
-                          <div className="font-semibold">Continuer en tant que visiteur</div>
-                          <div className="text-xs text-muted-foreground break-words">
+                          <div className="font-semibold text-sm sm:text-base">Continuer en tant que visiteur</div>
+                          <div className="text-xs text-muted-foreground break-words leading-relaxed">
                             Réservez sans créer de compte
                           </div>
                         </div>

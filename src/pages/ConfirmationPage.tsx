@@ -16,7 +16,8 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
 
   const handleDownloadVoucher = () => {
     toast.success('Téléchargement du voucher...')
-    const voucherContent = generateVoucherContent()
+    const barcodeData = generateBarcode(reference)
+    const voucherContent = generateVoucherContent(barcodeData)
     const blob = new Blob([voucherContent], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -28,31 +29,99 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
     URL.revokeObjectURL(url)
   }
 
+  const generateBarcode = (data: string) => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return ''
+    
+    canvas.width = 250
+    canvas.height = 100
+    
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    ctx.fillStyle = 'black'
+    const barWidth = 2
+    let x = 10
+    
+    for (let i = 0; i < data.length; i++) {
+      const charCode = data.charCodeAt(i)
+      const binaryStr = charCode.toString(2).padStart(8, '0')
+      
+      for (const bit of binaryStr) {
+        if (bit === '1') {
+          ctx.fillRect(x, 10, barWidth, 60)
+        }
+        x += barWidth + 1
+      }
+      x += 2
+    }
+    
+    ctx.fillStyle = 'black'
+    ctx.font = '12px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText(data, canvas.width / 2, 85)
+    
+    return canvas.toDataURL()
+  }
+
   const handleAddToGoogleWallet = () => {
-    toast.info('Fonctionnalité Google Wallet à venir')
     const passData = {
       reference,
+      barcode: generateBarcode(reference),
       type: 'hotel-booking',
-      dateIssued: new Date().toISOString()
+      dateIssued: new Date().toISOString(),
+      hotelName: 'Hotel Cities by American Tours',
+      checkIn: 'À confirmer',
+      checkOut: 'À confirmer'
     }
-    console.log('Google Wallet pass data:', passData)
+    
+    const jsonString = JSON.stringify(passData, null, 2)
+    const blob = new Blob([jsonString], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `google-wallet-${reference}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast.success('Pass téléchargé pour Google Wallet')
   }
 
   const handleAddToAppleWallet = () => {
-    toast.info('Fonctionnalité Apple Wallet à venir')
     const passData = {
       reference,
+      barcode: generateBarcode(reference),
       type: 'hotel-booking',
-      dateIssued: new Date().toISOString()
+      dateIssued: new Date().toISOString(),
+      hotelName: 'Hotel Cities by American Tours',
+      checkIn: 'À confirmer',
+      checkOut: 'À confirmer',
+      organizationName: 'American Tours',
+      description: 'Voucher de réservation d\'hôtel'
     }
-    console.log('Apple Wallet pass data:', passData)
+    
+    const jsonString = JSON.stringify(passData, null, 2)
+    const blob = new Blob([jsonString], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `apple-wallet-${reference}.pkpass.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast.success('Pass téléchargé pour Apple Wallet')
   }
 
   const handlePrintVoucher = () => {
     window.print()
   }
 
-  const generateVoucherContent = () => {
+  const generateVoucherContent = (barcodeData: string) => {
     return `
       <!DOCTYPE html>
       <html>
@@ -69,6 +138,9 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
           .info-row { display: flex; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
           .info-label { font-weight: bold; width: 200px; }
           .info-value { flex: 1; }
+          .barcode-container { text-align: center; margin: 30px 0; padding: 20px; border: 2px solid #ddd; border-radius: 8px; background: white; }
+          .barcode-container img { max-width: 300px; height: auto; }
+          .barcode-number { font-family: monospace; font-size: 12px; color: #666; margin-top: 10px; }
           .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; }
           @media print { body { padding: 20px; } }
         </style>
@@ -109,6 +181,11 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
           </div>
         </div>
         
+        <div class="barcode-container">
+          <img src="${barcodeData}" alt="Barcode" />
+          <div class="barcode-number">${reference}</div>
+        </div>
+        
         <div class="footer">
           <p>American Tours - Facilitateur de loisir en Tunisie</p>
           <p>Email: resamericantours@gmail.com | Tel/WA: +216 51 613 888</p>
@@ -119,59 +196,70 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
     `
   }
 
-  const VoucherPreview = () => (
-    <div className="space-y-6 p-6 bg-white">
-      <div className="text-center border-b-4 border-primary pb-6">
-        <h2 className="text-2xl font-bold text-primary mb-2">Hotel Cities by American Tours</h2>
-        <p className="text-muted-foreground">Voucher de Réservation</p>
-      </div>
+  const VoucherPreview = () => {
+    const barcodeData = generateBarcode(reference)
+    
+    return (
+      <div className="space-y-6 p-6 bg-white">
+        <div className="text-center border-b-4 border-primary pb-6">
+          <h2 className="text-2xl font-bold text-primary mb-2">Hotel Cities by American Tours</h2>
+          <p className="text-muted-foreground">Voucher de Réservation</p>
+        </div>
 
-      <div className="text-center py-4 bg-primary/5 rounded-lg">
-        <p className="text-sm text-muted-foreground mb-2">Référence de réservation</p>
-        <p className="text-4xl font-bold text-primary">{reference}</p>
-      </div>
+        <div className="text-center py-4 bg-primary/5 rounded-lg">
+          <p className="text-sm text-muted-foreground mb-2">Référence de réservation</p>
+          <p className="text-4xl font-bold text-primary">{reference}</p>
+        </div>
 
-      <div>
-        <h3 className="font-bold text-lg mb-3 border-b-2 pb-2">Informations de réservation</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between py-2 border-b">
-            <span className="font-semibold">Date d'émission:</span>
-            <span>{new Date().toLocaleDateString('fr-FR')}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b">
-            <span className="font-semibold">Statut:</span>
-            <span className="text-green-600 font-medium">Confirmé</span>
+        <div>
+          <h3 className="font-bold text-lg mb-3 border-b-2 pb-2">Informations de réservation</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between py-2 border-b">
+              <span className="font-semibold">Date d'émission:</span>
+              <span>{new Date().toLocaleDateString('fr-FR')}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="font-semibold">Statut:</span>
+              <span className="text-green-600 font-medium">Confirmé</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div>
-        <h3 className="font-bold text-lg mb-3 border-b-2 pb-2">Détails du séjour</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between py-2 border-b">
-            <span className="font-semibold">Hôtel:</span>
-            <span>À compléter</span>
-          </div>
-          <div className="flex justify-between py-2 border-b">
-            <span className="font-semibold">Date d'arrivée:</span>
-            <span>À compléter</span>
-          </div>
-          <div className="flex justify-between py-2 border-b">
-            <span className="font-semibold">Date de départ:</span>
-            <span>À compléter</span>
+        <div>
+          <h3 className="font-bold text-lg mb-3 border-b-2 pb-2">Détails du séjour</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between py-2 border-b">
+              <span className="font-semibold">Hôtel:</span>
+              <span>À compléter</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="font-semibold">Date d'arrivée:</span>
+              <span>À compléter</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="font-semibold">Date de départ:</span>
+              <span>À compléter</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <Separator />
+        {barcodeData && (
+          <div className="bg-white p-6 rounded-lg border-2 border-gray-200 flex flex-col items-center">
+            <img src={barcodeData} alt="Barcode" className="w-full max-w-[300px] h-auto" />
+            <p className="text-xs text-muted-foreground mt-2 font-mono">{reference}</p>
+          </div>
+        )}
 
-      <div className="text-center text-xs text-muted-foreground space-y-1 pt-4">
-        <p className="font-semibold">American Tours - Facilitateur de loisir en Tunisie</p>
-        <p>Email: resamericantours@gmail.com | Tel/WA: +216 51 613 888</p>
-        <p className="text-primary">Ce voucher doit être présenté à l'hôtel lors de votre arrivée</p>
+        <Separator />
+
+        <div className="text-center text-xs text-muted-foreground space-y-1 pt-4">
+          <p className="font-semibold">American Tours - Facilitateur de loisir en Tunisie</p>
+          <p>Email: resamericantours@gmail.com | Tel/WA: +216 51 613 888</p>
+          <p className="text-primary">Ce voucher doit être présenté à l'hôtel lors de votre arrivée</p>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

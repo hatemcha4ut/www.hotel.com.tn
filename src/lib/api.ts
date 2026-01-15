@@ -340,11 +340,34 @@ export const api = {
     }
     
     if (params.hotelName && params.hotelName.trim() !== '') {
-      const searchTerm = params.hotelName.toLowerCase().trim()
-      filtered = filtered.filter(h => 
-        h.name.toLowerCase().includes(searchTerm) ||
-        h.city.toLowerCase().includes(searchTerm)
-      )
+      const searchTerm = params.hotelName
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+      
+      filtered = filtered.filter(h => {
+        const hotelName = h.name
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+        const cityName = h.city
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+        const hotelDescription = (h.description || '')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+        
+        return (
+          hotelName.includes(searchTerm) ||
+          cityName.includes(searchTerm) ||
+          hotelDescription.includes(searchTerm) ||
+          hotelName.split(' ').some(word => word.startsWith(searchTerm)) ||
+          searchTerm.split(' ').some(term => hotelName.includes(term))
+        )
+      })
     }
     
     return filtered
