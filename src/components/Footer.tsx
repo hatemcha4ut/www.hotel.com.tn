@@ -1,10 +1,15 @@
+import hotelCitiesLogo from '@/assets/images/hotel-cities-logo.svg'
+
 export function Footer() {
   return (
     <footer className="bg-foreground text-background py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="text-lg font-bold mb-4">Hotel Cities</h3>
+            <div className="flex items-center gap-3 mb-4">
+              <img src={hotelCitiesLogo} alt="Hotel Cities" className="w-12 h-12 rounded-lg" />
+              <h3 className="text-lg font-bold">Hotel Cities</h3>
+            </div>
             <p className="text-background/80 text-sm">
               by American Tours - Your trusted partner for hotel reservations in Tunisia.
             </p>
