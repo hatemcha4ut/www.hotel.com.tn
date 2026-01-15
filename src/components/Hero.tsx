@@ -6,13 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Card } from '@/components/ui/card'
-import { MagnifyingGlass, CalendarBlank, Users, Minus, Plus } from '@phosphor-icons/react'
+import { Separator } from '@/components/ui/separator'
+import { MagnifyingGlass, CalendarBlank, Users, Minus, Plus, X } from '@phosphor-icons/react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useApp } from '@/contexts/AppContext'
 import { t } from '@/lib/translations'
 import { api } from '@/lib/api'
-import { City } from '@/types'
+import { City, RoomGuests } from '@/types'
 
 interface SearchWidgetProps {
   onSearch: () => void
@@ -26,33 +27,67 @@ export function SearchWidget({ onSearch }: SearchWidgetProps) {
     api.getCities().then(setCities)
   }, [])
 
-  const handleAdultsChange = (delta: number) => {
+  const handleAdultsChange = (roomIndex: number, delta: number) => {
+    const newRooms = [...searchParams.rooms]
+    newRooms[roomIndex] = {
+      ...newRooms[roomIndex],
+      adults: Math.max(1, newRooms[roomIndex].adults + delta),
+    }
     setSearchParams({
       ...searchParams,
-      adults: Math.max(1, searchParams.adults + delta),
+      rooms: newRooms,
     })
   }
 
-  const handleChildrenChange = (delta: number) => {
-    const currentCount = searchParams.children.length
+  const handleChildrenChange = (roomIndex: number, delta: number) => {
+    const newRooms = [...searchParams.rooms]
+    const currentChildren = newRooms[roomIndex].children
     if (delta > 0) {
+      newRooms[roomIndex] = {
+        ...newRooms[roomIndex],
+        children: [...currentChildren, 5],
+      }
+    } else if (delta < 0 && currentChildren.length > 0) {
+      newRooms[roomIndex] = {
+        ...newRooms[roomIndex],
+        children: currentChildren.slice(0, -1),
+      }
+    }
+    setSearchParams({
+      ...searchParams,
+      rooms: newRooms,
+    })
+  }
+
+  const handleChildAgeChange = (roomIndex: number, childIndex: number, age: number) => {
+    const newRooms = [...searchParams.rooms]
+    const newChildren = [...newRooms[roomIndex].children]
+    newChildren[childIndex] = age
+    newRooms[roomIndex] = {
+      ...newRooms[roomIndex],
+      children: newChildren,
+    }
+    setSearchParams({
+      ...searchParams,
+      rooms: newRooms,
+    })
+  }
+
+  const handleAddRoom = () => {
+    setSearchParams({
+      ...searchParams,
+      rooms: [...searchParams.rooms, { adults: 2, children: [] }],
+    })
+  }
+
+  const handleRemoveRoom = (roomIndex: number) => {
+    if (searchParams.rooms.length > 1) {
+      const newRooms = searchParams.rooms.filter((_, index) => index !== roomIndex)
       setSearchParams({
         ...searchParams,
-        children: [...searchParams.children, 5],
-      })
-    } else if (delta < 0 && currentCount > 0) {
-      setSearchParams({
-        ...searchParams,
-        children: searchParams.children.slice(0, -1),
+        rooms: newRooms,
       })
     }
-  }
-
-  const handleRoomsChange = (delta: number) => {
-    setSearchParams({
-      ...searchParams,
-      rooms: Math.max(1, searchParams.rooms + delta),
-    })
   }
 
   const handleSearch = () => {
@@ -65,9 +100,11 @@ export function SearchWidget({ onSearch }: SearchWidgetProps) {
     onSearch()
   }
 
-  const guestsText = `${searchParams.adults} ${searchParams.adults > 1 ? 'adultes' : 'adulte'}${
-    searchParams.children.length > 0 ? `, ${searchParams.children.length} ${searchParams.children.length > 1 ? 'enfants' : 'enfant'}` : ''
-  }`
+  const totalAdults = searchParams.rooms.reduce((sum, room) => sum + room.adults, 0)
+  const totalChildren = searchParams.rooms.reduce((sum, room) => sum + room.children.length, 0)
+  const guestsText = `${totalAdults} ${totalAdults > 1 ? 'adultes' : 'adulte'}${
+    totalChildren > 0 ? `, ${totalChildren} ${totalChildren > 1 ? 'enfants' : 'enfant'}` : ''
+  }, ${searchParams.rooms.length} ${searchParams.rooms.length > 1 ? 'chambres' : 'chambre'}`
 
   return (
     <Card className="p-6 shadow-xl bg-card/95 backdrop-blur">
@@ -175,87 +212,125 @@ export function SearchWidget({ onSearch }: SearchWidgetProps) {
                 {guestsText}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80" align="start">
+            <PopoverContent className="w-96 max-h-[500px] overflow-y-auto" align="start">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{t('search.adults', language)}</div>
-                    <div className="text-sm text-muted-foreground">13 ans et plus</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleAdultsChange(-1)}
-                      disabled={searchParams.adults <= 1}
-                    >
-                      <Minus size={16} />
-                    </Button>
-                    <span className="w-8 text-center font-medium">{searchParams.adults}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleAdultsChange(1)}
-                    >
-                      <Plus size={16} />
-                    </Button>
-                  </div>
-                </div>
+                {searchParams.rooms.map((room, roomIndex) => (
+                  <div key={roomIndex} className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-sm">
+                        {t('search.room', language)} {roomIndex + 1}
+                      </h4>
+                      {searchParams.rooms.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveRoom(roomIndex)}
+                          className="h-8 text-destructive hover:text-destructive"
+                        >
+                          <X size={16} className="mr-1" />
+                          {t('search.removeRoom', language)}
+                        </Button>
+                      )}
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{t('search.children', language)}</div>
-                    <div className="text-sm text-muted-foreground">0-12 ans</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleChildrenChange(-1)}
-                      disabled={searchParams.children.length === 0}
-                    >
-                      <Minus size={16} />
-                    </Button>
-                    <span className="w-8 text-center font-medium">{searchParams.children.length}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleChildrenChange(1)}
-                    >
-                      <Plus size={16} />
-                    </Button>
-                  </div>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-sm">{t('search.adults', language)}</div>
+                        <div className="text-xs text-muted-foreground">13 ans et plus</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleAdultsChange(roomIndex, -1)}
+                          disabled={room.adults <= 1}
+                        >
+                          <Minus size={16} />
+                        </Button>
+                        <span className="w-8 text-center font-medium">{room.adults}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleAdultsChange(roomIndex, 1)}
+                        >
+                          <Plus size={16} />
+                        </Button>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{t('search.rooms', language)}</div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-sm">{t('search.children', language)}</div>
+                        <div className="text-xs text-muted-foreground">0-12 ans</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleChildrenChange(roomIndex, -1)}
+                          disabled={room.children.length === 0}
+                        >
+                          <Minus size={16} />
+                        </Button>
+                        <span className="w-8 text-center font-medium">{room.children.length}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleChildrenChange(roomIndex, 1)}
+                        >
+                          <Plus size={16} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {room.children.length > 0 && (
+                      <div className="space-y-2 pl-4 border-l-2 border-muted">
+                        <p className="text-xs text-muted-foreground font-medium">
+                          {t('search.childAge', language)}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {room.children.map((age, childIndex) => (
+                            <Select
+                              key={childIndex}
+                              value={age.toString()}
+                              onValueChange={(value) =>
+                                handleChildAgeChange(roomIndex, childIndex, parseInt(value))
+                              }
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Âge" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 13 }, (_, i) => i).map((ageOption) => (
+                                  <SelectItem key={ageOption} value={ageOption.toString()}>
+                                    {ageOption} {ageOption <= 1 ? 'an' : 'ans'}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {roomIndex < searchParams.rooms.length - 1 && (
+                      <Separator className="my-2" />
+                    )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleRoomsChange(-1)}
-                      disabled={searchParams.rooms <= 1}
-                    >
-                      <Minus size={16} />
-                    </Button>
-                    <span className="w-8 text-center font-medium">{searchParams.rooms}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleRoomsChange(1)}
-                    >
-                      <Plus size={16} />
-                    </Button>
-                  </div>
-                </div>
+                ))}
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleAddRoom}
+                >
+                  <Plus size={16} className="mr-2" />
+                  {t('search.addRoom', language)}
+                </Button>
               </div>
             </PopoverContent>
           </Popover>

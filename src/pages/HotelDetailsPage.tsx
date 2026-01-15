@@ -343,11 +343,12 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
                     <div className="flex items-center gap-2">
                       <Users size={16} className="text-muted-foreground" />
                       <div>
-                        <div className="font-medium">Voyageurs</div>
+                        <div className="font-medium">Hôtes</div>
                         <div className="text-muted-foreground">
-                          {searchParams.adults} adulte{searchParams.adults > 1 ? 's' : ''}
-                          {searchParams.children.length > 0 &&
-                            `, ${searchParams.children.length} enfant${searchParams.children.length > 1 ? 's' : ''}`}
+                          {searchParams.rooms.reduce((sum, room) => sum + room.adults, 0)} adulte{searchParams.rooms.reduce((sum, room) => sum + room.adults, 0) > 1 ? 's' : ''}
+                          {searchParams.rooms.reduce((sum, room) => sum + room.children.length, 0) > 0 &&
+                            `, ${searchParams.rooms.reduce((sum, room) => sum + room.children.length, 0)} enfant${searchParams.rooms.reduce((sum, room) => sum + room.children.length, 0) > 1 ? 's' : ''}`}
+                          {searchParams.rooms.length > 1 && `, ${searchParams.rooms.length} chambres`}
                         </div>
                       </div>
                     </div>

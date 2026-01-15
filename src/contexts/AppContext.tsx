@@ -16,9 +16,12 @@ const defaultSearchParams: SearchParams = {
   hotelName: undefined,
   checkIn: null,
   checkOut: null,
-  adults: 2,
-  children: [],
-  rooms: 1,
+  rooms: [
+    {
+      adults: 2,
+      children: []
+    }
+  ],
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {

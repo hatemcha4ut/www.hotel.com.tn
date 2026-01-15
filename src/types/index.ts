@@ -28,15 +28,18 @@ export interface City {
   country: string
 }
 
+export interface RoomGuests {
+  adults: number
+  children: number[]
+}
+
 export interface SearchParams {
   searchMode: 'city' | 'hotel'
   cityId?: string
   hotelName?: string
   checkIn: Date | null
   checkOut: Date | null
-  adults: number
-  children: number[]
-  rooms: number
+  rooms: RoomGuests[]
 }
 
 export interface Room {

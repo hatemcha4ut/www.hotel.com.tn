@@ -19,8 +19,12 @@ type TranslationKey =
   | 'search.checkOut'
   | 'search.guests'
   | 'search.rooms'
+  | 'search.room'
   | 'search.adults'
   | 'search.children'
+  | 'search.childAge'
+  | 'search.addRoom'
+  | 'search.removeRoom'
   | 'search.searchHotels'
   | 'common.from'
   | 'common.perNight'
@@ -46,10 +50,14 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.hotelName': 'Nom de l\'hôtel',
     'search.checkIn': 'Date d\'arrivée',
     'search.checkOut': 'Date de départ',
-    'search.guests': 'Voyageurs',
+    'search.guests': 'Nombre d\'hôtes',
     'search.rooms': 'Chambres',
+    'search.room': 'Chambre',
     'search.adults': 'Adultes',
     'search.children': 'Enfants',
+    'search.childAge': 'Âge de l\'enfant',
+    'search.addRoom': 'Ajouter une chambre',
+    'search.removeRoom': 'Supprimer',
     'search.searchHotels': 'Rechercher',
     'common.from': 'À partir de',
     'common.perNight': 'par nuit',
@@ -74,10 +82,14 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.hotelName': 'Hotel name',
     'search.checkIn': 'Check-in',
     'search.checkOut': 'Check-out',
-    'search.guests': 'Guests',
+    'search.guests': 'Number of guests',
     'search.rooms': 'Rooms',
+    'search.room': 'Room',
     'search.adults': 'Adults',
     'search.children': 'Children',
+    'search.childAge': 'Child age',
+    'search.addRoom': 'Add room',
+    'search.removeRoom': 'Remove',
     'search.searchHotels': 'Search',
     'common.from': 'From',
     'common.perNight': 'per night',
@@ -102,10 +114,14 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.hotelName': 'اسم الفندق',
     'search.checkIn': 'تاريخ الوصول',
     'search.checkOut': 'تاريخ المغادرة',
-    'search.guests': 'المسافرون',
+    'search.guests': 'عدد الضيوف',
     'search.rooms': 'الغرف',
+    'search.room': 'غرفة',
     'search.adults': 'البالغون',
     'search.children': 'الأطفال',
+    'search.childAge': 'عمر الطفل',
+    'search.addRoom': 'إضافة غرفة',
+    'search.removeRoom': 'حذف',
     'search.searchHotels': 'بحث',
     'common.from': 'ابتداءً من',
     'common.perNight': 'لكل ليلة',
