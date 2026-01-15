@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { CheckCircle, Download, Eye, Printer } from '@phosphor-icons/react'
+import { CheckCircle, Download, Eye, Printer, Wallet } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 
@@ -26,6 +26,26 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  const handleAddToGoogleWallet = () => {
+    toast.info('Fonctionnalité Google Wallet à venir')
+    const passData = {
+      reference,
+      type: 'hotel-booking',
+      dateIssued: new Date().toISOString()
+    }
+    console.log('Google Wallet pass data:', passData)
+  }
+
+  const handleAddToAppleWallet = () => {
+    toast.info('Fonctionnalité Apple Wallet à venir')
+    const passData = {
+      reference,
+      type: 'hotel-booking',
+      dateIssued: new Date().toISOString()
+    }
+    console.log('Apple Wallet pass data:', passData)
   }
 
   const handlePrintVoucher = () => {
@@ -184,7 +204,7 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
                 onClick={() => setShowVoucher(true)}
               >
                 <Eye size={18} className="mr-2" />
-                Voir le voucher
+                Voir
               </Button>
               <Button 
                 variant="outline" 
@@ -194,6 +214,26 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
               >
                 <Download size={18} className="mr-2" />
                 Télécharger
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                size="lg"
+                onClick={handleAddToAppleWallet}
+              >
+                <Wallet size={18} className="mr-2" />
+                Apple Wallet
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                size="lg"
+                onClick={handleAddToGoogleWallet}
+              >
+                <Wallet size={18} className="mr-2" />
+                Google Wallet
               </Button>
             </div>
           </div>

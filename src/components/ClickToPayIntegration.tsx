@@ -23,7 +23,7 @@ export function ClickToPayIntegration({
   const handlePaymentRedirect = () => {
     setIsProcessing(true)
     
-    toast.info('Redirection vers ClickToPay...')
+    toast.info('Redirection vers ClicToPay.com.tn...')
     
     setTimeout(() => {
       toast.success('Paiement effectué avec succès!')
@@ -37,7 +37,7 @@ export function ClickToPayIntegration({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard size={24} className="text-primary" />
-            Paiement sécurisé via ClickToPay
+            Paiement sécurisé via ClicToPay.com.tn
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -128,7 +128,7 @@ export function ClickToPayIntegration({
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
             <p className="text-blue-800">
-              <strong>Note:</strong> Vous allez être redirigé vers la plateforme de paiement sécurisée ClickToPay.
+              <strong>Note:</strong> Vous allez être redirigé vers la plateforme de paiement sécurisée ClicToPay.com.tn.
               Gardez cette page ouverte pour recevoir la confirmation.
             </p>
           </div>

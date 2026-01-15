@@ -95,9 +95,12 @@ export function SearchResultsPage({ onViewHotel, onBack }: SearchResultsPageProp
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h1 className="text-2xl font-bold mb-2">
-                {searchParams.searchMode === 'city' ? 'Recherche par ville' : 'Recherche par hôtel'}
+                {searchParams.searchMode === 'city' ? 'Recherche par ville' : 'Recherche par nom d\'hôtel'}
               </h1>
               <div className="text-sm text-muted-foreground">
+                {searchParams.hotelName && (
+                  <span className="font-medium">Recherche: "{searchParams.hotelName}" • </span>
+                )}
                 {filteredHotels.length} hôtel{filteredHotels.length > 1 ? 's' : ''} trouvé{filteredHotels.length > 1 ? 's' : ''}
                 {searchParams.checkIn && searchParams.checkOut && (
                   <span>

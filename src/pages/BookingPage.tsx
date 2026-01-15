@@ -374,26 +374,30 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                       </p>
                       <Button 
                         variant="outline" 
-                        className="w-full justify-start gap-3 h-auto py-4"
+                        className="w-full justify-start gap-3 h-auto py-4 px-4"
                         onClick={handleCreateAccount}
                       >
-                        <UserPlus size={24} />
-                        <div className="text-left">
+                        <div className="flex-shrink-0">
+                          <UserPlus size={24} />
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
                           <div className="font-semibold">Créer un compte</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground break-words">
                             Suivez vos réservations et bénéficiez d'offres exclusives
                           </div>
                         </div>
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full justify-start gap-3 h-auto py-4"
+                        className="w-full justify-start gap-3 h-auto py-4 px-4"
                         onClick={handleContinueAsGuest}
                       >
-                        <User size={24} />
-                        <div className="text-left">
+                        <div className="flex-shrink-0">
+                          <User size={24} />
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
                           <div className="font-semibold">Continuer en tant que visiteur</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground break-words">
                             Réservez sans créer de compte
                           </div>
                         </div>
