@@ -33,10 +33,10 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm text-background/80">
-              <li>Email: info@hotelcities.com</li>
-              <li>Tel: +1 800 123 4567</li>
+              <li>Email: resamericantours@gmail.com</li>
+              <li>Tel / WA Business: +216 51 613 888</li>
               <li>Address: American Tours HQ</li>
-              <li>United States</li>
+              <li>Tunisia</li>
             </ul>
           </div>
         </div>
