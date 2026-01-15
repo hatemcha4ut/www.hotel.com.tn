@@ -8,13 +8,16 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { CheckCircle, ArrowLeft } from '@phosphor-icons/react'
+import { CheckCircle, ArrowLeft, User, UserPlus } from '@phosphor-icons/react'
 import { Hotel, Room, GuestDetails } from '@/types'
 import { useApp } from '@/contexts/AppContext'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
+import { AuthDialog } from '@/components/AuthDialog'
+import { ClickToPayIntegration } from '@/components/ClickToPayIntegration'
+import { useKV } from '@github/spark/hooks'
 
 interface BookingPageProps {
   hotel: Hotel
@@ -37,13 +40,11 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
   })
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [authDialogOpen, setAuthDialogOpen] = useState(false)
+  const [currentUser, setCurrentUser] = useKV<any>('currentUser', null)
+  const [accountChoice, setAccountChoice] = useState<'guest' | 'create' | 'login' | null>(null)
 
   const handleSubmit = async () => {
-    if (!acceptTerms) {
-      toast.error('Veuillez accepter les conditions générales')
-      return
-    }
-
     setProcessing(true)
     try {
       const result = await api.createBooking({
@@ -61,6 +62,27 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
     }
   }
 
+  const handleAuthSuccess = (user: any) => {
+    setCurrentUser(user)
+    setGuestDetails({
+      ...guestDetails,
+      firstName: user.name?.split(' ')[0] || '',
+      lastName: user.name?.split(' ')[1] || '',
+      email: user.email || '',
+      phone: user.phone || '',
+    })
+    toast.success(`Bienvenue ${user.name}!`)
+  }
+
+  const handleContinueAsGuest = () => {
+    setAccountChoice('guest')
+  }
+
+  const handleCreateAccount = () => {
+    setAccountChoice('create')
+    setAuthDialogOpen(true)
+  }
+
   const nights =
     searchParams.checkIn && searchParams.checkOut
       ? Math.ceil(
@@ -68,6 +90,12 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
             (1000 * 60 * 60 * 24)
         )
       : 1
+
+  const totalAmount = Math.round(room.pricePerNight * nights * 1.1)
+
+  const generateBookingReference = () => {
+    return `BK${Date.now().toString().slice(-8)}`
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,92 +270,175 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
             )}
 
             {step === 2 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Récapitulatif de la réservation</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h3 className="font-semibold mb-2">Informations du voyageur</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {guestDetails.firstName} {guestDetails.lastName}
-                      <br />
-                      {guestDetails.email}
-                      <br />
-                      {guestDetails.countryCode} {guestDetails.phone}
-                    </p>
-                  </div>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Récapitulatif de la réservation</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={hotel.image}
+                        alt={hotel.name}
+                        className="w-24 h-24 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{hotel.name}</h3>
+                        <p className="text-sm text-muted-foreground">{hotel.city}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          {Array.from({ length: hotel.stars }).map((_, i) => (
+                            <span key={i} className="text-accent">★</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
-                  <Separator />
+                    <Separator />
 
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="terms"
-                      checked={acceptTerms}
-                      onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-                    />
-                    <Label htmlFor="terms" className="text-sm cursor-pointer">
-                      J'accepte les conditions générales et la politique de confidentialité
-                    </Label>
-                  </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Chambre sélectionnée</h4>
+                      <p className="text-sm text-muted-foreground">{room.name}</p>
+                      <p className="text-sm text-muted-foreground">{room.bedConfig}</p>
+                      <p className="text-sm text-muted-foreground">{room.boardingType}</p>
+                    </div>
 
-                  <div className="flex gap-4">
-                    <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
-                      Retour
-                    </Button>
-                    <Button
-                      onClick={() => setStep(3)}
-                      disabled={!acceptTerms}
-                      className="flex-1"
-                    >
-                      Continuer vers le paiement
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    {searchParams.checkIn && searchParams.checkOut && (
+                      <>
+                        <Separator />
+                        <div className="text-sm space-y-1">
+                          <div>
+                            <span className="text-muted-foreground">Arrivée: </span>
+                            {format(searchParams.checkIn, 'dd MMM yyyy', { locale: fr })}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Départ: </span>
+                            {format(searchParams.checkOut, 'dd MMM yyyy', { locale: fr })}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Durée: </span>
+                            {nights} nuit{nights > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <Separator />
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {room.pricePerNight} TND × {nights} nuit{nights > 1 ? 's' : ''}
+                        </span>
+                        <span>{room.pricePerNight * nights} TND</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Taxes et frais</span>
+                        <span>{Math.round(room.pricePerNight * nights * 0.1)} TND</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between text-lg font-bold">
+                        <span>Total</span>
+                        <span className="text-primary">
+                          {Math.round(room.pricePerNight * nights * 1.1)} TND
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informations du voyageur</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">
+                        {guestDetails.firstName} {guestDetails.lastName}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{guestDetails.email}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {guestDetails.countryCode} {guestDetails.phone}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {!currentUser && accountChoice === null && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Compte utilisateur</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Créez un compte pour suivre vos réservations ou continuez en tant que visiteur
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start gap-3 h-auto py-4"
+                        onClick={handleCreateAccount}
+                      >
+                        <UserPlus size={24} />
+                        <div className="text-left">
+                          <div className="font-semibold">Créer un compte</div>
+                          <div className="text-xs text-muted-foreground">
+                            Suivez vos réservations et bénéficiez d'offres exclusives
+                          </div>
+                        </div>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start gap-3 h-auto py-4"
+                        onClick={handleContinueAsGuest}
+                      >
+                        <User size={24} />
+                        <div className="text-left">
+                          <div className="font-semibold">Continuer en tant que visiteur</div>
+                          <div className="text-xs text-muted-foreground">
+                            Réservez sans créer de compte
+                          </div>
+                        </div>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        id="terms"
+                        checked={acceptTerms}
+                        onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                      />
+                      <Label htmlFor="terms" className="text-sm cursor-pointer">
+                        J'accepte les conditions générales et la politique de confidentialité
+                      </Label>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
+                        Retour
+                      </Button>
+                      <Button
+                        onClick={() => setStep(3)}
+                        disabled={!acceptTerms || (!currentUser && accountChoice === null)}
+                        className="flex-1"
+                      >
+                        Continuer vers le paiement
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {step === 3 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Paiement sécurisé</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cardNumber">Numéro de carte</Label>
-                    <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="expiry">Date d'expiration</Label>
-                      <Input id="expiry" placeholder="MM/AA" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cvv">CVV</Label>
-                      <Input id="cvv" placeholder="123" maxLength={3} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardName">Nom sur la carte</Label>
-                    <Input id="cardName" placeholder="NOM PRÉNOM" />
-                  </div>
-
-                  <div className="flex gap-4 pt-4">
-                    <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
-                      Retour
-                    </Button>
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={processing}
-                      className="flex-1"
-                    >
-                      {processing ? 'Traitement...' : 'Payer maintenant'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <ClickToPayIntegration
+                amount={totalAmount}
+                reference={generateBookingReference()}
+                onPaymentSuccess={handleSubmit}
+                onBack={() => setStep(2)}
+              />
             )}
           </div>
 
@@ -398,6 +509,12 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
           </div>
         </div>
       </div>
+
+      <AuthDialog 
+        open={authDialogOpen} 
+        onOpenChange={setAuthDialogOpen}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </div>
   )
 }

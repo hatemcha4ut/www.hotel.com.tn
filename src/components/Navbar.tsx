@@ -4,11 +4,15 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { List, User } from '@phosphor-icons/react'
 import { useApp } from '@/contexts/AppContext'
 import { t } from '@/lib/translations'
+import { AuthDialog } from '@/components/AuthDialog'
+import { useKV } from '@github/spark/hooks'
 import hotelCitiesLogo from '@/assets/images/hotel-cities-logo.svg'
 
 export function Navbar() {
   const { language, setLanguage } = useApp()
   const [isOpen, setIsOpen] = useState(false)
+  const [authDialogOpen, setAuthDialogOpen] = useState(false)
+  const [currentUser, setCurrentUser] = useKV<any>('currentUser', null)
 
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => {
     const handleClick = () => {
@@ -58,6 +62,14 @@ export function Navbar() {
     )
   }
 
+  const handleAuthSuccess = (user: any) => {
+    setCurrentUser(user)
+  }
+
+  const handleSignOut = () => {
+    setCurrentUser(null)
+  }
+
   return (
     <nav className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -86,9 +98,9 @@ export function Navbar() {
               ))}
             </div>
 
-            <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2" onClick={() => currentUser ? handleSignOut() : setAuthDialogOpen(true)}>
               <User size={18} />
-              {t('nav.signIn', language)}
+              {currentUser ? currentUser.name : t('nav.signIn', language)}
             </Button>
 
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -119,9 +131,13 @@ export function Navbar() {
                         ))}
                       </div>
                     </div>
-                    <Button className="w-full" size="lg">
+                    <Button className="w-full" size="lg" onClick={() => {
+                      setIsOpen(false)
+                      if (!currentUser) setAuthDialogOpen(true)
+                      else handleSignOut()
+                    }}>
                       <User size={18} className="mr-2" />
-                      {t('nav.signIn', language)}
+                      {currentUser ? currentUser.name : t('nav.signIn', language)}
                     </Button>
                   </div>
                 </div>
@@ -130,6 +146,12 @@ export function Navbar() {
           </div>
         </div>
       </div>
+
+      <AuthDialog 
+        open={authDialogOpen} 
+        onOpenChange={setAuthDialogOpen}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </nav>
   )
 }
