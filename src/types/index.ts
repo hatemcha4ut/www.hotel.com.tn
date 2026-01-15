@@ -46,11 +46,13 @@ export interface Room {
   maxOccupancy: number
   size: number
   boardingType: string
+  boardingOptions?: { type: string; pricePerNight: number; totalPrice: number }[]
   amenities: string[]
   cancellationPolicy: string
   pricePerNight: number
   totalPrice: number
   image: string
+  selectedBoarding?: string
 }
 
 export interface GuestDetails {

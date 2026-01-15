@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 import {
   ArrowLeft,
   Star,
@@ -35,6 +37,7 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<string>('')
+  const [selectedBoardings, setSelectedBoardings] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const loadHotelDetails = async () => {
@@ -47,6 +50,16 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
         }
         const roomsData = await api.getAvailableRooms(hotelId)
         setRooms(roomsData)
+        
+        const initialBoardings: Record<string, string> = {}
+        roomsData.forEach(room => {
+          if (room.boardingOptions && room.boardingOptions.length > 0) {
+            initialBoardings[room.id] = room.boardingOptions[0].type
+          } else {
+            initialBoardings[room.id] = room.boardingType
+          }
+        })
+        setSelectedBoardings(initialBoardings)
       } catch (error) {
         console.error('Error loading hotel details:', error)
         toast.error('Erreur lors du chargement des détails')
@@ -56,6 +69,25 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
     }
     loadHotelDetails()
   }, [hotelId])
+
+  const handleBoardingChange = (roomId: string, boardingType: string) => {
+    setSelectedBoardings(prev => ({ ...prev, [roomId]: boardingType }))
+  }
+
+  const handleSelectRoom = (room: Room) => {
+    const selectedBoarding = selectedBoardings[room.id]
+    const boardingOption = room.boardingOptions?.find(b => b.type === selectedBoarding)
+    
+    const roomWithBoarding = {
+      ...room,
+      selectedBoarding,
+      boardingType: selectedBoarding,
+      pricePerNight: boardingOption?.pricePerNight || room.pricePerNight,
+      totalPrice: boardingOption?.totalPrice || room.totalPrice,
+    }
+    
+    onBookRoom(roomWithBoarding)
+  }
 
   if (loading || !hotel) {
     return (
@@ -165,68 +197,116 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
             <div>
               <h2 className="text-2xl font-bold mb-6">Chambres disponibles</h2>
               <div className="space-y-4">
-                {rooms.map((room) => (
-                  <Card key={room.id}>
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row gap-6">
-                        <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
-                          <img
-                            src={room.image}
-                            alt={room.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
+                {rooms.map((room) => {
+                  const selectedBoarding = selectedBoardings[room.id] || room.boardingType
+                  const currentBoardingOption = room.boardingOptions?.find(
+                    b => b.type === selectedBoarding
+                  )
+                  const displayPrice = currentBoardingOption?.pricePerNight || room.pricePerNight
+                  const displayTotal = currentBoardingOption?.totalPrice || room.totalPrice
+
+                  return (
+                    <Card key={room.id}>
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
+                            <img
+                              src={room.image}
+                              alt={room.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                           
-                          <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground mb-4">
-                            <div className="flex items-center gap-2">
-                              <Bed size={16} />
-                              <span>{room.bedConfig}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Users size={16} />
-                              <span>Max {room.maxOccupancy} personnes</span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {room.amenities.slice(0, 4).map((amenity, idx) => (
-                              <Badge key={idx} variant="secondary">
-                                {amenity}
-                              </Badge>
-                            ))}
-                          </div>
-
-                          <p className="text-xs text-muted-foreground mb-4">
-                            {room.cancellationPolicy}
-                          </p>
-
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-sm text-muted-foreground">À partir de</div>
-                              <div className="text-2xl font-bold text-primary">
-                                {room.pricePerNight} TND
-                                <span className="text-sm font-normal text-muted-foreground">
-                                  {' '}/nuit
-                                </span>
+                          <div className="flex-1">
+                            <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
+                            
+                            <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground mb-4">
+                              <div className="flex items-center gap-2">
+                                <Bed size={16} />
+                                <span>{room.bedConfig}</span>
                               </div>
-                              {searchParams.checkIn && searchParams.checkOut && (
-                                <div className="text-sm text-muted-foreground">
-                                  Total: {room.totalPrice} TND
-                                </div>
-                              )}
+                              <div className="flex items-center gap-2">
+                                <Users size={16} />
+                                <span>Max {room.maxOccupancy} personnes</span>
+                              </div>
                             </div>
-                            <Button onClick={() => onBookRoom(room)}>
-                              Sélectionner
-                            </Button>
+
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {room.amenities.slice(0, 4).map((amenity, idx) => (
+                                <Badge key={idx} variant="secondary">
+                                  {amenity}
+                                </Badge>
+                              ))}
+                            </div>
+
+                            {room.boardingOptions && room.boardingOptions.length > 1 && (
+                              <div className="mb-4">
+                                <Label className="text-sm font-semibold mb-3 block">
+                                  Type de pension
+                                </Label>
+                                <RadioGroup
+                                  value={selectedBoarding}
+                                  onValueChange={(value) => handleBoardingChange(room.id, value)}
+                                  className="space-y-2"
+                                >
+                                  {room.boardingOptions.map((option) => (
+                                    <div
+                                      key={option.type}
+                                      className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                                    >
+                                      <RadioGroupItem value={option.type} id={`${room.id}-${option.type}`} />
+                                      <Label
+                                        htmlFor={`${room.id}-${option.type}`}
+                                        className="flex-1 flex items-center justify-between cursor-pointer"
+                                      >
+                                        <span className="font-medium">{option.type}</span>
+                                        <span className="text-sm text-primary font-semibold">
+                                          {option.pricePerNight} TND/nuit
+                                        </span>
+                                      </Label>
+                                    </div>
+                                  ))}
+                                </RadioGroup>
+                              </div>
+                            )}
+
+                            {(!room.boardingOptions || room.boardingOptions.length <= 1) && (
+                              <div className="mb-4">
+                                <Badge variant="outline" className="text-sm">
+                                  {room.boardingType}
+                                </Badge>
+                              </div>
+                            )}
+
+                            <p className="text-xs text-muted-foreground mb-4">
+                              {room.cancellationPolicy}
+                            </p>
+
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm text-muted-foreground">À partir de</div>
+                                <div className="text-2xl font-bold text-primary">
+                                  {displayPrice} TND
+                                  <span className="text-sm font-normal text-muted-foreground">
+                                    {' '}/nuit
+                                  </span>
+                                </div>
+                                {searchParams.checkIn && searchParams.checkOut && (
+                                  <div className="text-sm text-muted-foreground">
+                                    Total: {displayTotal} TND
+                                  </div>
+                                )}
+                              </div>
+                              <Button onClick={() => handleSelectRoom(room)}>
+                                Sélectionner
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </div>
           </div>
