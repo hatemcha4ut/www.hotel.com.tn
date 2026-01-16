@@ -186,7 +186,9 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
     const bookedBy = booking?.guestDetails 
       ? `${booking.guestDetails.firstName} ${booking.guestDetails.lastName}`
       : 'À compléter'
-    const mainOccupant = booking?.guestDetails 
+    const mainOccupant = booking?.guestDetails?.bookingForOther && booking?.guestDetails?.guestFirstName
+      ? `${booking.guestDetails.guestFirstName} ${booking.guestDetails.guestLastName}`
+      : booking?.guestDetails
       ? `${booking.guestDetails.firstName} ${booking.guestDetails.lastName}`
       : 'À compléter'
     

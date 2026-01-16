@@ -33,6 +33,7 @@ export interface City {
 export interface RoomGuests {
   adults: number
   children: number[]
+  boardingType?: string
 }
 
 export interface SearchParams {
@@ -68,6 +69,9 @@ export interface GuestDetails {
   countryCode: string
   nationality: string
   specialRequests?: string
+  bookingForOther?: boolean
+  guestFirstName?: string
+  guestLastName?: string
 }
 
 export interface Booking {

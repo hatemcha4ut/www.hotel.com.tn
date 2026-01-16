@@ -250,6 +250,60 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                     </Select>
                   </div>
 
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="bookingForOther"
+                        checked={guestDetails.bookingForOther || false}
+                        onCheckedChange={(checked) =>
+                          setGuestDetails({
+                            ...guestDetails,
+                            bookingForOther: checked as boolean,
+                            guestFirstName: checked ? guestDetails.guestFirstName : undefined,
+                            guestLastName: checked ? guestDetails.guestLastName : undefined,
+                          })
+                        }
+                      />
+                      <Label htmlFor="bookingForOther" className="font-normal cursor-pointer">
+                        Je réserve pour quelqu'un d'autre
+                      </Label>
+                    </div>
+
+                    {guestDetails.bookingForOther && (
+                      <div className="border border-border rounded-lg p-4 space-y-4 bg-muted/30">
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Coordonnées de l'occupant principal
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="guestFirstName">Prénom de l'occupant *</Label>
+                            <Input
+                              id="guestFirstName"
+                              value={guestDetails.guestFirstName || ''}
+                              onChange={(e) =>
+                                setGuestDetails({ ...guestDetails, guestFirstName: e.target.value })
+                              }
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="guestLastName">Nom de l'occupant *</Label>
+                            <Input
+                              id="guestLastName"
+                              value={guestDetails.guestLastName || ''}
+                              onChange={(e) =>
+                                setGuestDetails({ ...guestDetails, guestLastName: e.target.value })
+                              }
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="requests">Demandes spéciales (optionnel)</Label>
                     <Textarea
@@ -272,7 +326,8 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                       !guestDetails.lastName ||
                       !guestDetails.email ||
                       !guestDetails.phone ||
-                      !guestDetails.nationality
+                      !guestDetails.nationality ||
+                      (guestDetails.bookingForOther && (!guestDetails.guestFirstName || !guestDetails.guestLastName))
                     }
                   >
                     Continuer

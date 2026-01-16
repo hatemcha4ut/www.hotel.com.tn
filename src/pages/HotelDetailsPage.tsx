@@ -415,58 +415,58 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
       </div>
 
       <Dialog open={showDateDialog} onOpenChange={setShowDateDialog}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Sélectionnez vos dates de séjour</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-base sm:text-lg">Sélectionnez vos dates de séjour</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Choisissez vos dates d'arrivée et de départ pour finaliser votre réservation
             </DialogDescription>
           </DialogHeader>
           
           <Tabs defaultValue="checkin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="checkin" className="text-xs sm:text-sm">
+            <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10">
+              <TabsTrigger value="checkin" className="text-xs sm:text-sm px-2">
                 Date d'arrivée
               </TabsTrigger>
-              <TabsTrigger value="checkout" className="text-xs sm:text-sm" disabled={!tempCheckIn}>
+              <TabsTrigger value="checkout" className="text-xs sm:text-sm px-2" disabled={!tempCheckIn}>
                 Date de départ
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="checkin" className="space-y-4 mt-4">
-              <div className="border rounded-lg overflow-hidden">
+            <TabsContent value="checkin" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+              <div className="border rounded-lg overflow-auto max-w-full">
                 <CalendarComponent
                   mode="single"
                   selected={tempCheckIn}
                   onSelect={setTempCheckIn}
                   disabled={(date) => date < new Date()}
                   locale={fr}
-                  className="mx-auto"
+                  className="mx-auto w-full"
                 />
               </div>
               {tempCheckIn && (
-                <div className="bg-primary/10 p-3 rounded-lg text-center">
-                  <p className="text-sm font-medium">
+                <div className="bg-primary/10 p-2 sm:p-3 rounded-lg text-center">
+                  <p className="text-xs sm:text-sm font-medium">
                     Arrivée: {format(tempCheckIn, 'dd MMMM yyyy', { locale: fr })}
                   </p>
                 </div>
               )}
             </TabsContent>
             
-            <TabsContent value="checkout" className="space-y-4 mt-4">
-              <div className="border rounded-lg overflow-hidden">
+            <TabsContent value="checkout" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+              <div className="border rounded-lg overflow-auto max-w-full">
                 <CalendarComponent
                   mode="single"
                   selected={tempCheckOut}
                   onSelect={setTempCheckOut}
                   disabled={(date) => !tempCheckIn || date <= tempCheckIn}
                   locale={fr}
-                  className="mx-auto"
+                  className="mx-auto w-full"
                 />
               </div>
               {tempCheckOut && (
-                <div className="bg-primary/10 p-3 rounded-lg text-center">
-                  <p className="text-sm font-medium">
+                <div className="bg-primary/10 p-2 sm:p-3 rounded-lg text-center">
+                  <p className="text-xs sm:text-sm font-medium">
                     Départ: {format(tempCheckOut, 'dd MMMM yyyy', { locale: fr })}
                   </p>
                 </div>
@@ -475,24 +475,24 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
           </Tabs>
 
           {tempCheckIn && tempCheckOut && (
-            <div className="bg-accent p-4 rounded-lg text-center mt-4">
-              <p className="text-sm text-muted-foreground mb-1">Durée du séjour</p>
-              <p className="text-2xl font-bold text-primary">
+            <div className="bg-accent p-3 sm:p-4 rounded-lg text-center mt-3 sm:mt-4">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-1">Durée du séjour</p>
+              <p className="text-xl sm:text-2xl font-bold text-primary">
                 {Math.ceil((tempCheckOut.getTime() - tempCheckIn.getTime()) / (1000 * 60 * 60 * 24))} nuit{Math.ceil((tempCheckOut.getTime() - tempCheckIn.getTime()) / (1000 * 60 * 60 * 24)) > 1 ? 's' : ''}
               </p>
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4">
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 h-9 sm:h-10 text-xs sm:text-sm"
               onClick={() => setShowDateDialog(false)}
             >
               Annuler
             </Button>
             <Button
-              className="flex-1"
+              className="flex-1 h-9 sm:h-10 text-xs sm:text-sm"
               onClick={handleConfirmDates}
               disabled={!tempCheckIn || !tempCheckOut}
             >
