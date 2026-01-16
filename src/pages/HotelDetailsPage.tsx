@@ -50,6 +50,7 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
   const [tempCheckOut, setTempCheckOut] = useState<Date | undefined>(undefined)
   const [applySameBoardingToAll, setApplySameBoardingToAll] = useState(false)
   const [globalBoardingType, setGlobalBoardingType] = useState<string>('')
+  const [activeRoomTab, setActiveRoomTab] = useState<string>('')
   const multiRoomMode = searchParams.rooms.length > 1
 
   useEffect(() => {
@@ -61,8 +62,12 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
           setHotel(hotelData)
           setSelectedImage(hotelData.image)
         }
-        const roomsData = await api.getAvailableRooms(hotelId)
+        const roomsData = await api.getAvailableRooms(hotelId, searchParams.rooms.length)
         setRooms(roomsData)
+        
+        if (roomsData.length > 0) {
+          setActiveRoomTab(roomsData[0].id)
+        }
         
         const initialBoardings: Record<string, string> = {}
         roomsData.forEach(room => {
@@ -81,7 +86,7 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
       }
     }
     loadHotelDetails()
-  }, [hotelId])
+  }, [hotelId, searchParams.rooms.length])
 
   const handleBoardingChange = (roomId: string, boardingType: string) => {
     if (applySameBoardingToAll) {
@@ -97,6 +102,14 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
       setGlobalBoardingType(boardingType)
     } else {
       setSelectedBoardings(prev => ({ ...prev, [roomId]: boardingType }))
+      
+      if (multiRoomMode) {
+        const currentRoomIndex = rooms.findIndex(room => room.id === roomId)
+        if (currentRoomIndex !== -1 && currentRoomIndex < rooms.length - 1) {
+          const nextRoom = rooms[currentRoomIndex + 1]
+          setActiveRoomTab(nextRoom.id)
+        }
+      }
     }
   }
   
@@ -398,7 +411,7 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
               )}
               
               {multiRoomMode ? (
-                <Tabs defaultValue={rooms[0]?.id || ''} className="w-full">
+                <Tabs value={activeRoomTab} onValueChange={setActiveRoomTab} className="w-full">
                   <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto bg-muted/50">
                     {rooms.map((room, idx) => {
                       const isSelected = selectedRoomsForBooking.has(room.id)

@@ -403,9 +403,10 @@ export const api = {
     return mockHotels.find(h => h.id === hotelId) || null
   },
 
-  getAvailableRooms: async (hotelId: string): Promise<Room[]> => {
+  getAvailableRooms: async (hotelId: string, roomCount?: number): Promise<Room[]> => {
     await new Promise(resolve => setTimeout(resolve, 400))
-    return mockRooms
+    const count = roomCount || mockRooms.length
+    return mockRooms.slice(0, Math.min(count, mockRooms.length))
   },
 
   createBooking: async (bookingData: any): Promise<{ reference: string }> => {
