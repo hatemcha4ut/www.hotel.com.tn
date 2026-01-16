@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { MagnifyingGlass, CalendarBlank, Users, Minus, Plus, X } from '@phosphor-icons/react'
+import { DateRangePicker } from '@/components/DateRangePicker'
+import { MagnifyingGlass, Users, Minus, Plus, X } from '@phosphor-icons/react'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useApp } from '@/contexts/AppContext'
@@ -124,7 +125,7 @@ export function SearchWidget({ onSearch }: SearchWidgetProps) {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {searchParams.searchMode === 'city' ? (
           <div className="space-y-2">
             <Label>{t('search.selectCity', language)}</Label>
@@ -156,47 +157,14 @@ export function SearchWidget({ onSearch }: SearchWidgetProps) {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="check-in-date">{t('search.checkIn', language)}</Label>
-          <div className="relative">
-            <CalendarBlank className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-            <Input
-              id="check-in-date"
-              type="date"
-              className="pl-10 h-11"
-              value={searchParams.checkIn ? format(searchParams.checkIn, 'yyyy-MM-dd') : ''}
-              min={format(new Date(), 'yyyy-MM-dd')}
-              onChange={(e) => {
-                if (e.target.value) {
-                  const date = parseISO(e.target.value)
-                  setSearchParams({ ...searchParams, checkIn: date })
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="check-out-date">{t('search.checkOut', language)}</Label>
-          <div className="relative">
-            <CalendarBlank className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-            <Input
-              id="check-out-date"
-              type="date"
-              className="pl-10 h-11"
-              value={searchParams.checkOut ? format(searchParams.checkOut, 'yyyy-MM-dd') : ''}
-              min={
-                searchParams.checkIn 
-                  ? format(new Date(searchParams.checkIn.getTime() + 86400000), 'yyyy-MM-dd')
-                  : format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')
-              }
-              onChange={(e) => {
-                if (e.target.value) {
-                  const date = parseISO(e.target.value)
-                  setSearchParams({ ...searchParams, checkOut: date })
-                }
-              }}
-            />
-          </div>
+          <Label>{t('search.checkIn', language)}</Label>
+          <DateRangePicker
+            checkIn={searchParams.checkIn}
+            checkOut={searchParams.checkOut}
+            onCheckInChange={(date) => setSearchParams({ ...searchParams, checkIn: date })}
+            onCheckOutChange={(date) => setSearchParams({ ...searchParams, checkOut: date })}
+            language={language}
+          />
         </div>
 
         <div className="space-y-2">
