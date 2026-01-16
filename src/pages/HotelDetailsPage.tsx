@@ -384,7 +384,17 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
                 )}
               </div>
               
-              {multiRoomMode && (
+              {rooms.length === 0 && !loading && (
+                <Card className="border-2 border-dashed border-border">
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">
+                      Aucune chambre disponible pour cet hôtel.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {rooms.length > 0 && multiRoomMode && (
                 <Card className="mb-4 bg-muted/30 border-primary/20">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between gap-4">
@@ -408,7 +418,7 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
                 </Card>
               )}
               
-              {multiRoomMode && selectedRoomsForBooking.size > 0 && (
+              {rooms.length > 0 && multiRoomMode && selectedRoomsForBooking.size > 0 && (
                 <Card className="mb-4 border-2 border-primary">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -432,7 +442,7 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
                 </Card>
               )}
               
-              {multiRoomMode ? (
+              {rooms.length > 0 && multiRoomMode ? (
                 <Tabs value={activeRoomTab} onValueChange={setActiveRoomTab} className="w-full">
                   <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto bg-muted/50">
                     {rooms.map((room, idx) => {
