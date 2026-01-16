@@ -405,8 +405,7 @@ export const api = {
 
   getAvailableRooms: async (hotelId: string, roomCount?: number): Promise<Room[]> => {
     await new Promise(resolve => setTimeout(resolve, 400))
-    const count = roomCount || mockRooms.length
-    return mockRooms.slice(0, Math.min(count, mockRooms.length))
+    return mockRooms
   },
 
   createBooking: async (bookingData: any): Promise<{ reference: string }> => {

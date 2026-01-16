@@ -50,7 +50,6 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
   const [tempCheckOut, setTempCheckOut] = useState<Date | undefined>(undefined)
   const [applySameBoardingToAll, setApplySameBoardingToAll] = useState(false)
   const [globalBoardingType, setGlobalBoardingType] = useState<string>('')
-  const [activeRoomTab, setActiveRoomTab] = useState<string>('')
   const multiRoomMode = searchParams.rooms.length > 1
 
   useEffect(() => {
@@ -64,10 +63,6 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
         }
         const roomsData = await api.getAvailableRooms(hotelId, searchParams.rooms.length)
         setRooms(roomsData)
-        
-        if (roomsData.length > 0) {
-          setActiveRoomTab(roomsData[0].id)
-        }
         
         const initialBoardings: Record<string, string> = {}
         roomsData.forEach(room => {
@@ -120,16 +115,6 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
         newSelectedRooms.add(roomId)
       }
       setSelectedRoomsForBooking(newSelectedRooms)
-      
-      if (multiRoomMode && newSelectedRooms.size < searchParams.rooms.length) {
-        const currentRoomIndex = rooms.findIndex(room => room.id === roomId)
-        if (currentRoomIndex !== -1 && currentRoomIndex < rooms.length - 1) {
-          const nextRoom = rooms[currentRoomIndex + 1]
-          setTimeout(() => {
-            setActiveRoomTab(nextRoom.id)
-          }, 300)
-        }
-      }
     }
   }
   
@@ -443,28 +428,7 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
               )}
               
               {rooms.length > 0 && multiRoomMode ? (
-                <Tabs value={activeRoomTab} onValueChange={setActiveRoomTab} className="w-full">
-                  <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto bg-muted/50">
-                    {rooms.map((room, idx) => {
-                      const isSelected = selectedRoomsForBooking.has(room.id)
-                      const roomNumber = idx + 1
-                      return (
-                        <TabsTrigger 
-                          key={room.id} 
-                          value={room.id}
-                          className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 ${
-                            applySameBoardingToAll 
-                              ? 'bg-primary text-primary-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground' 
-                              : 'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
-                          }`}
-                        >
-                          {isSelected && <div className="w-2 h-2 rounded-full bg-accent" />}
-                          <span className="font-semibold">Chambre {roomNumber}</span>
-                        </TabsTrigger>
-                      )
-                    })}
-                  </TabsList>
-                  
+                <div className="space-y-4">
                   {rooms.map((room, roomIdx) => {
                     const selectedBoarding = selectedBoardings[room.id] || room.boardingType
                     const currentBoardingOption = room.boardingOptions?.find(
@@ -473,148 +437,125 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
                     const displayPrice = currentBoardingOption?.pricePerNight || room.pricePerNight
                     const displayTotal = currentBoardingOption?.totalPrice || room.totalPrice
                     const isSelected = selectedRoomsForBooking.has(room.id)
-                    const roomNumber = roomIdx + 1
-                    const roomGuests = searchParams.rooms[roomIdx]
 
                     return (
-                      <TabsContent key={room.id} value={room.id} className="mt-4">
-                        <Card className={isSelected ? 'border-2 border-primary' : ''}>
-                          <CardContent className="p-6">
-                            <div className="mb-4 flex items-center justify-between">
-                              <div>
-                                <h3 className="text-2xl font-bold text-primary">Chambre {roomNumber}</h3>
-                                {roomGuests && (
-                                  <p className="text-sm text-muted-foreground mt-1">
-                                    {roomGuests.adults} adulte{roomGuests.adults > 1 ? 's' : ''}
-                                    {roomGuests.children.length > 0 && `, ${roomGuests.children.length} enfant${roomGuests.children.length > 1 ? 's' : ''}`}
-                                  </p>
-                                )}
-                              </div>
-                              {isSelected && (
-                                <Badge variant="default" className="text-sm">
-                                  Sélectionnée
-                                </Badge>
-                              )}
+                      <Card key={room.id} className={isSelected ? 'border-2 border-primary' : ''}>
+                        <CardContent className="p-6">
+                          <div className="flex flex-col md:flex-row gap-6">
+                            <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
+                              <img
+                                src={room.image}
+                                alt={room.name}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
                             
-                            <Separator className="mb-6" />
-                            
-                            <div className="flex flex-col md:flex-row gap-6">
-                              <div className="w-full md:w-64 h-48 rounded-lg overflow-hidden flex-shrink-0">
-                                <img
-                                  src={room.image}
-                                  alt={room.name}
-                                  className="w-full h-full object-cover"
-                                />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-xl font-semibold">{room.name}</h3>
+                                {isSelected && (
+                                  <Badge variant="default" className="text-sm">
+                                    Sélectionnée
+                                  </Badge>
+                                )}
                               </div>
                               
-                              <div className="flex-1">
-                                <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
-                                
-                                <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground mb-4">
-                                  <div className="flex items-center gap-2">
-                                    <Bed size={16} />
-                                    <span>{room.bedConfig}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Users size={16} />
-                                    <span>Max {room.maxOccupancy} personnes</span>
-                                  </div>
+                              <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground mb-4">
+                                <div className="flex items-center gap-2">
+                                  <Bed size={16} />
+                                  <span>{room.bedConfig}</span>
                                 </div>
-
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                  {room.amenities.slice(0, 4).map((amenity, idx) => (
-                                    <Badge key={idx} variant="secondary">
-                                      {amenity}
-                                    </Badge>
-                                  ))}
-                                </div>
-
-                                {room.boardingOptions && room.boardingOptions.length > 1 && (
-                                  <div className="mb-4">
-                                    <Label className="text-sm font-semibold mb-3 block">
-                                      Type de pension {applySameBoardingToAll && '(appliqué à toutes les chambres)'}
-                                    </Label>
-                                    <RadioGroup
-                                      value={selectedBoarding}
-                                      onValueChange={(value) => handleBoardingChange(room.id, value)}
-                                      className="space-y-2"
-                                      disabled={applySameBoardingToAll && roomIdx !== 0}
-                                    >
-                                      {room.boardingOptions.map((option) => (
-                                        <div
-                                          key={option.type}
-                                          className={`flex items-center space-x-3 p-3 rounded-lg border border-border transition-colors ${
-                                            applySameBoardingToAll && roomIdx !== 0
-                                              ? 'opacity-60 cursor-not-allowed'
-                                              : 'hover:bg-muted/50 cursor-pointer'
-                                          }`}
-                                        >
-                                          <RadioGroupItem 
-                                            value={option.type} 
-                                            id={`${room.id}-${option.type}`}
-                                            disabled={applySameBoardingToAll && roomIdx !== 0}
-                                          />
-                                          <Label
-                                            htmlFor={`${room.id}-${option.type}`}
-                                            className="flex-1 flex items-center justify-between cursor-pointer"
-                                          >
-                                            <span className="font-medium">{option.type}</span>
-                                            <span className="text-sm text-primary font-semibold">
-                                              {option.pricePerNight} TND/nuit
-                                            </span>
-                                          </Label>
-                                        </div>
-                                      ))}
-                                    </RadioGroup>
-                                  </div>
-                                )}
-
-                                {(!room.boardingOptions || room.boardingOptions.length <= 1) && (
-                                  <div className="mb-4">
-                                    <Badge variant="outline" className="text-sm">
-                                      {room.boardingType}
-                                    </Badge>
-                                  </div>
-                                )}
-
-                                <p className="text-xs text-muted-foreground mb-4">
-                                  {room.cancellationPolicy}
-                                </p>
-
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <div className="text-sm text-muted-foreground">À partir de</div>
-                                    <div className="text-2xl font-bold text-primary">
-                                      {displayPrice} TND
-                                      <span className="text-sm font-normal text-muted-foreground">
-                                        {' '}/nuit
-                                      </span>
-                                    </div>
-                                    {searchParams.checkIn && searchParams.checkOut && (
-                                      <div className="text-sm text-muted-foreground">
-                                        Total: {displayTotal} TND
-                                      </div>
-                                    )}
-                                  </div>
-                                  {!applySameBoardingToAll && (
-                                    <Button 
-                                      variant={isSelected ? 'default' : 'outline'}
-                                      onClick={() => handleToggleRoomSelection(room.id)}
-                                      size="lg"
-                                    >
-                                      {isSelected ? 'Sélectionnée' : 'Sélectionner'}
-                                    </Button>
-                                  )}
+                                <div className="flex items-center gap-2">
+                                  <Users size={16} />
+                                  <span>Max {room.maxOccupancy} personnes</span>
                                 </div>
                               </div>
+
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {room.amenities.slice(0, 4).map((amenity, idx) => (
+                                  <Badge key={idx} variant="secondary">
+                                    {amenity}
+                                  </Badge>
+                                ))}
+                              </div>
+
+                              {room.boardingOptions && room.boardingOptions.length > 1 && (
+                                <div className="mb-4">
+                                  <Label className="text-sm font-semibold mb-3 block">
+                                    Type de pension
+                                  </Label>
+                                  <RadioGroup
+                                    value={selectedBoarding}
+                                    onValueChange={(value) => handleBoardingChange(room.id, value)}
+                                    className="space-y-2"
+                                  >
+                                    {room.boardingOptions.map((option) => (
+                                      <div
+                                        key={option.type}
+                                        className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                                      >
+                                        <RadioGroupItem 
+                                          value={option.type} 
+                                          id={`${room.id}-${option.type}`}
+                                        />
+                                        <Label
+                                          htmlFor={`${room.id}-${option.type}`}
+                                          className="flex-1 flex items-center justify-between cursor-pointer"
+                                        >
+                                          <span className="font-medium">{option.type}</span>
+                                          <span className="text-sm text-primary font-semibold">
+                                            {option.pricePerNight} TND/nuit
+                                          </span>
+                                        </Label>
+                                      </div>
+                                    ))}
+                                  </RadioGroup>
+                                </div>
+                              )}
+
+                              {(!room.boardingOptions || room.boardingOptions.length <= 1) && (
+                                <div className="mb-4">
+                                  <Badge variant="outline" className="text-sm">
+                                    {room.boardingType}
+                                  </Badge>
+                                </div>
+                              )}
+
+                              <p className="text-xs text-muted-foreground mb-4">
+                                {room.cancellationPolicy}
+                              </p>
+
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-sm text-muted-foreground">À partir de</div>
+                                  <div className="text-2xl font-bold text-primary">
+                                    {displayPrice} TND
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                      {' '}/nuit
+                                    </span>
+                                  </div>
+                                  {searchParams.checkIn && searchParams.checkOut && (
+                                    <div className="text-sm text-muted-foreground">
+                                      Total: {displayTotal} TND
+                                    </div>
+                                  )}
+                                </div>
+                                <Button 
+                                  variant={isSelected ? 'default' : 'outline'}
+                                  onClick={() => handleToggleRoomSelection(room.id)}
+                                  size="lg"
+                                  disabled={!isSelected && selectedRoomsForBooking.size >= searchParams.rooms.length}
+                                >
+                                  {isSelected ? 'Sélectionnée' : 'Sélectionner'}
+                                </Button>
+                              </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
+                          </div>
+                        </CardContent>
+                      </Card>
                     )
                   })}
-                </Tabs>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {rooms.map((room) => {
