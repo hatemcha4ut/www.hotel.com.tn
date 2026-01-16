@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { CheckCircle, ArrowLeft, User, UserPlus } from '@phosphor-icons/react'
 import { Hotel, Room, GuestDetails } from '@/types'
 import { useApp } from '@/contexts/AppContext'
@@ -22,12 +23,14 @@ import { useKV } from '@github/spark/hooks'
 interface BookingPageProps {
   hotel: Hotel
   room: Room
+  rooms?: Room[]
   onBack: () => void
   onComplete: (reference: string) => void
 }
 
-export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProps) {
+export function BookingPage({ hotel, room, rooms, onBack, onComplete }: BookingPageProps) {
   const { searchParams } = useApp()
+  const bookingRooms = rooms && rooms.length > 0 ? rooms : [room]
   const [step, setStep] = useState(1)
   const [guestDetails, setGuestDetails] = useState<GuestDetails>({
     firstName: '',
@@ -38,6 +41,14 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
     nationality: 'TN',
     specialRequests: '',
   })
+  const [roomBoardings, setRoomBoardings] = useState<Record<number, string>>(() => {
+    const initial: Record<number, string> = {}
+    bookingRooms.forEach((r, idx) => {
+      initial[idx] = r.selectedBoarding || r.boardingType
+    })
+    return initial
+  })
+  const [applyToAll, setApplyToAll] = useState(bookingRooms.length > 1)
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
@@ -58,6 +69,10 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
         reference: result.reference,
         hotel,
         room,
+        rooms: bookingRooms.map((r, idx) => ({
+          ...r,
+          selectedBoarding: roomBoardings[idx]
+        })),
         searchParams,
         guestDetails,
         nights,
@@ -94,6 +109,29 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
     setAccountChoice('create')
     setAuthDialogOpen(true)
   }
+  
+  const handleBoardingChange = (roomIndex: number, boardingType: string) => {
+    if (applyToAll) {
+      const newBoardings: Record<number, string> = {}
+      bookingRooms.forEach((_, idx) => {
+        newBoardings[idx] = boardingType
+      })
+      setRoomBoardings(newBoardings)
+    } else {
+      setRoomBoardings(prev => ({ ...prev, [roomIndex]: boardingType }))
+    }
+  }
+  
+  const getRoomPrice = (roomData: Room, roomIndex: number) => {
+    const selectedBoarding = roomBoardings[roomIndex]
+    const boardingOption = roomData.boardingOptions?.find(b => b.type === selectedBoarding)
+    return boardingOption?.pricePerNight || roomData.pricePerNight
+  }
+  
+  const getRoomTotal = (roomData: Room, roomIndex: number) => {
+    const pricePerNight = getRoomPrice(roomData, roomIndex)
+    return Math.round(pricePerNight * nights * 1.1)
+  }
 
   const nights =
     searchParams.checkIn && searchParams.checkOut
@@ -103,7 +141,7 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
         )
       : 1
 
-  const totalAmount = Math.round(room.pricePerNight * nights * 1.1)
+  const totalAmount = bookingRooms.reduce((sum, r, idx) => sum + getRoomTotal(r, idx), 0)
 
   const generateBookingReference = () => {
     return `BK${Date.now().toString().slice(-8)}`
@@ -251,6 +289,94 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                   </div>
 
                   <Separator />
+                  
+                  {bookingRooms.length > 0 && bookingRooms.some(r => r.boardingOptions && r.boardingOptions.length > 1) && (
+                    <>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold">Type de pension</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Sélectionnez le type de pension pour {bookingRooms.length > 1 ? 'vos chambres' : 'votre chambre'}
+                            </p>
+                          </div>
+                          {bookingRooms.length > 1 && (
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id="applyToAll"
+                                checked={applyToAll}
+                                onCheckedChange={(checked) => {
+                                  setApplyToAll(checked as boolean)
+                                  if (checked) {
+                                    const firstBoarding = roomBoardings[0]
+                                    const newBoardings: Record<number, string> = {}
+                                    bookingRooms.forEach((_, idx) => {
+                                      newBoardings[idx] = firstBoarding
+                                    })
+                                    setRoomBoardings(newBoardings)
+                                  }
+                                }}
+                              />
+                              <Label htmlFor="applyToAll" className="text-sm cursor-pointer">
+                                Appliquer à toutes les chambres
+                              </Label>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-4">
+                          {bookingRooms.map((roomData, roomIndex) => {
+                            const boardingOptions = roomData.boardingOptions || []
+                            if (boardingOptions.length <= 1) return null
+                            
+                            return (
+                              <Card key={roomIndex} className="border-2">
+                                <CardHeader className="pb-3">
+                                  <CardTitle className="text-base">
+                                    Chambre {roomIndex + 1}: {roomData.name}
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <RadioGroup
+                                    value={roomBoardings[roomIndex]}
+                                    onValueChange={(value) => handleBoardingChange(roomIndex, value)}
+                                    className="space-y-3"
+                                  >
+                                    {boardingOptions.map((option) => (
+                                      <div
+                                        key={option.type}
+                                        className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                                      >
+                                        <input
+                                          type="radio"
+                                          value={option.type}
+                                          id={`room-${roomIndex}-${option.type}`}
+                                          checked={roomBoardings[roomIndex] === option.type}
+                                          onChange={(e) => handleBoardingChange(roomIndex, e.target.value)}
+                                          className="w-4 h-4 text-primary focus:ring-primary"
+                                        />
+                                        <Label
+                                          htmlFor={`room-${roomIndex}-${option.type}`}
+                                          className="flex-1 flex items-center justify-between cursor-pointer"
+                                        >
+                                          <span className="font-medium">{option.type}</span>
+                                          <span className="text-sm text-muted-foreground">
+                                            {option.pricePerNight} TND/nuit
+                                          </span>
+                                        </Label>
+                                      </div>
+                                    ))}
+                                  </RadioGroup>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                    </>
+                  )}
 
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
@@ -363,10 +489,21 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                     <Separator />
 
                     <div>
-                      <h4 className="font-medium mb-2">Chambre sélectionnée</h4>
-                      <p className="text-sm text-muted-foreground">{room.name}</p>
-                      <p className="text-sm text-muted-foreground">{room.bedConfig}</p>
-                      <p className="text-sm text-muted-foreground">{room.boardingType}</p>
+                      <h4 className="font-medium mb-3">
+                        {bookingRooms.length > 1 ? `Chambres sélectionnées (${bookingRooms.length})` : 'Chambre sélectionnée'}
+                      </h4>
+                      <div className="space-y-3">
+                        {bookingRooms.map((roomData, idx) => (
+                          <div key={idx} className="p-3 border border-border rounded-lg bg-muted/30">
+                            <div className="font-medium text-sm">{bookingRooms.length > 1 && `Chambre ${idx + 1}: `}{roomData.name}</div>
+                            <div className="text-sm text-muted-foreground mt-1">{roomData.bedConfig}</div>
+                            <div className="text-sm text-muted-foreground">{roomBoardings[idx]}</div>
+                            <div className="text-sm font-semibold text-primary mt-2">
+                              {getRoomPrice(roomData, idx)} TND/nuit
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     {searchParams.checkIn && searchParams.checkOut && (
@@ -396,21 +533,27 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                     <Separator />
 
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          {room.pricePerNight} TND × {nights} nuit{nights > 1 ? 's' : ''}
-                        </span>
-                        <span>{room.pricePerNight * nights} TND</span>
-                      </div>
+                      {bookingRooms.map((roomData, idx) => {
+                        const pricePerNight = getRoomPrice(roomData, idx)
+                        const subtotal = pricePerNight * nights
+                        return (
+                          <div key={idx} className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Chambre {bookingRooms.length > 1 ? `${idx + 1} - ` : ''}{pricePerNight} TND × {nights} nuit{nights > 1 ? 's' : ''}
+                            </span>
+                            <span>{subtotal} TND</span>
+                          </div>
+                        )
+                      })}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Taxes et frais</span>
-                        <span>{Math.round(room.pricePerNight * nights * 0.1)} TND</span>
+                        <span>{Math.round(bookingRooms.reduce((sum, r, idx) => sum + (getRoomPrice(r, idx) * nights), 0) * 0.1)} TND</span>
                       </div>
                       <Separator />
                       <div className="flex justify-between text-lg font-bold">
                         <span>Total</span>
                         <span className="text-primary">
-                          {Math.round(room.pricePerNight * nights * 1.1)} TND
+                          {totalAmount} TND
                         </span>
                       </div>
                     </div>
@@ -544,10 +687,18 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                 <Separator />
 
                 <div>
-                  <div className="font-medium mb-2">{room.name}</div>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <div>{room.bedConfig}</div>
-                    <div>{room.boardingType}</div>
+                  <div className="font-medium mb-3">
+                    {bookingRooms.length > 1 ? `Chambres (${bookingRooms.length})` : 'Chambre'}
+                  </div>
+                  <div className="space-y-3">
+                    {bookingRooms.map((roomData, idx) => (
+                      <div key={idx} className="text-sm space-y-1 pb-2 border-b border-border last:border-0 last:pb-0">
+                        <div className="font-medium">{bookingRooms.length > 1 && `${idx + 1}. `}{roomData.name}</div>
+                        <div className="text-muted-foreground">{roomData.bedConfig}</div>
+                        <div className="text-muted-foreground">{roomBoardings[idx]}</div>
+                        <div className="text-primary font-semibold">{getRoomPrice(roomData, idx)} TND/nuit</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -574,21 +725,27 @@ export function BookingPage({ hotel, room, onBack, onComplete }: BookingPageProp
                 <Separator />
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {room.pricePerNight} TND × {nights} nuit{nights > 1 ? 's' : ''}
-                    </span>
-                    <span>{room.pricePerNight * nights} TND</span>
-                  </div>
+                  {bookingRooms.map((roomData, idx) => {
+                    const pricePerNight = getRoomPrice(roomData, idx)
+                    const subtotal = pricePerNight * nights
+                    return (
+                      <div key={idx} className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {bookingRooms.length > 1 ? `Ch. ${idx + 1} - ` : ''}{pricePerNight} TND × {nights}
+                        </span>
+                        <span>{subtotal} TND</span>
+                      </div>
+                    )
+                  })}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxes et frais</span>
-                    <span>{Math.round(room.pricePerNight * nights * 0.1)} TND</span>
+                    <span>{Math.round(bookingRooms.reduce((sum, r, idx) => sum + (getRoomPrice(r, idx) * nights), 0) * 0.1)} TND</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
                     <span className="text-primary">
-                      {Math.round(room.pricePerNight * nights * 1.1)} TND
+                      {totalAmount} TND
                     </span>
                   </div>
                 </div>

@@ -20,6 +20,7 @@ function App() {
   const [selectedHotelId, setSelectedHotelId] = useState<string>('')
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null)
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
+  const [selectedRooms, setSelectedRooms] = useState<Room[]>([])
   const [bookingReference, setBookingReference] = useState<string>('')
 
   const handleSearch = () => {
@@ -34,6 +35,14 @@ function App() {
   const handleBookRoom = (hotel: Hotel, room: Room) => {
     setSelectedHotel(hotel)
     setSelectedRoom(room)
+    setSelectedRooms([room])
+    setCurrentPage('booking')
+  }
+  
+  const handleBookRooms = (hotel: Hotel, rooms: Room[]) => {
+    setSelectedHotel(hotel)
+    setSelectedRooms(rooms)
+    setSelectedRoom(rooms[0])
     setCurrentPage('booking')
   }
 
@@ -47,6 +56,7 @@ function App() {
     setSelectedHotelId('')
     setSelectedHotel(null)
     setSelectedRoom(null)
+    setSelectedRooms([])
     setBookingReference('')
   }
 
@@ -87,13 +97,26 @@ function App() {
                   handleBookRoom(hotel, room)
                 }
               }}
+              onBookRooms={(rooms) => {
+                const hotel = selectedHotel
+                if (!hotel) {
+                  import('@/lib/api').then(({ api }) => {
+                    api.getHotelDetails(selectedHotelId).then((h) => {
+                      if (h) handleBookRooms(h, rooms)
+                    })
+                  })
+                } else {
+                  handleBookRooms(hotel, rooms)
+                }
+              }}
             />
           )}
           
-          {currentPage === 'booking' && selectedHotel && selectedRoom && (
+          {currentPage === 'booking' && selectedHotel && selectedRooms.length > 0 && (
             <BookingPage
               hotel={selectedHotel}
-              room={selectedRoom}
+              room={selectedRoom!}
+              rooms={selectedRooms}
               onBack={() => setCurrentPage('hotel')}
               onComplete={handleBookingComplete}
             />

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'
@@ -32,19 +33,22 @@ interface HotelDetailsPageProps {
   hotelId: string
   onBack: () => void
   onBookRoom: (room: Room) => void
+  onBookRooms?: (rooms: Room[]) => void
 }
 
-export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPageProps) {
+export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: HotelDetailsPageProps) {
   const { searchParams, setSearchParams } = useApp()
   const [hotel, setHotel] = useState<Hotel | null>(null)
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<string>('')
   const [selectedBoardings, setSelectedBoardings] = useState<Record<string, string>>({})
+  const [selectedRoomsForBooking, setSelectedRoomsForBooking] = useState<Set<string>>(new Set())
   const [showDateDialog, setShowDateDialog] = useState(false)
   const [selectedRoomForBooking, setSelectedRoomForBooking] = useState<Room | null>(null)
   const [tempCheckIn, setTempCheckIn] = useState<Date | undefined>(undefined)
   const [tempCheckOut, setTempCheckOut] = useState<Date | undefined>(undefined)
+  const multiRoomMode = searchParams.rooms.length > 1
 
   useEffect(() => {
     const loadHotelDetails = async () => {
@@ -79,6 +83,58 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
 
   const handleBoardingChange = (roomId: string, boardingType: string) => {
     setSelectedBoardings(prev => ({ ...prev, [roomId]: boardingType }))
+  }
+  
+  const handleToggleRoomSelection = (roomId: string) => {
+    setSelectedRoomsForBooking(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(roomId)) {
+        newSet.delete(roomId)
+      } else {
+        if (newSet.size < searchParams.rooms.length) {
+          newSet.add(roomId)
+        } else {
+          toast.error(`Vous ne pouvez sélectionner que ${searchParams.rooms.length} chambre(s)`)
+        }
+      }
+      return newSet
+    })
+  }
+  
+  const handleBookSelectedRooms = () => {
+    if (selectedRoomsForBooking.size === 0) {
+      toast.error('Veuillez sélectionner au moins une chambre')
+      return
+    }
+    
+    if (selectedRoomsForBooking.size !== searchParams.rooms.length) {
+      toast.error(`Veuillez sélectionner ${searchParams.rooms.length} chambre(s)`)
+      return
+    }
+    
+    const selectedRoomsList = rooms
+      .filter(room => selectedRoomsForBooking.has(room.id))
+      .map((room, idx) => {
+        const selectedBoarding = selectedBoardings[room.id]
+        const boardingOption = room.boardingOptions?.find(b => b.type === selectedBoarding)
+        
+        return {
+          ...room,
+          roomIndex: idx,
+          selectedBoarding,
+          boardingType: selectedBoarding,
+          pricePerNight: boardingOption?.pricePerNight || room.pricePerNight,
+          totalPrice: boardingOption?.totalPrice || room.totalPrice,
+        }
+      })
+    
+    if (!searchParams.checkIn || !searchParams.checkOut) {
+      setTempCheckIn(addDays(new Date(), 1))
+      setTempCheckOut(addDays(new Date(), 2))
+      setShowDateDialog(true)
+    } else if (onBookRooms) {
+      onBookRooms(selectedRoomsList)
+    }
   }
 
   const handleSelectRoom = (room: Room) => {
@@ -124,6 +180,23 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
     
     if (selectedRoomForBooking) {
       onBookRoom(selectedRoomForBooking)
+    } else if (selectedRoomsForBooking.size > 0 && onBookRooms) {
+      const selectedRoomsList = rooms
+        .filter(room => selectedRoomsForBooking.has(room.id))
+        .map((room, idx) => {
+          const selectedBoarding = selectedBoardings[room.id]
+          const boardingOption = room.boardingOptions?.find(b => b.type === selectedBoarding)
+          
+          return {
+            ...room,
+            roomIndex: idx,
+            selectedBoarding,
+            boardingType: selectedBoarding,
+            pricePerNight: boardingOption?.pricePerNight || room.pricePerNight,
+            totalPrice: boardingOption?.totalPrice || room.totalPrice,
+          }
+        })
+      onBookRooms(selectedRoomsList)
     }
   }
 
@@ -233,7 +306,39 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
             <Separator />
 
             <div>
-              <h2 className="text-2xl font-bold mb-6">Chambres disponibles</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Chambres disponibles</h2>
+                {multiRoomMode && (
+                  <Badge variant="secondary" className="text-sm">
+                    Sélectionnez {searchParams.rooms.length} chambre{searchParams.rooms.length > 1 ? 's' : ''}
+                  </Badge>
+                )}
+              </div>
+              
+              {multiRoomMode && selectedRoomsForBooking.size > 0 && (
+                <Card className="mb-4 border-2 border-primary">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold">
+                          {selectedRoomsForBooking.size} / {searchParams.rooms.length} chambre{searchParams.rooms.length > 1 ? 's' : ''} sélectionnée{selectedRoomsForBooking.size > 1 ? 's' : ''}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Sélectionnez toutes les chambres pour continuer
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={handleBookSelectedRooms}
+                        disabled={selectedRoomsForBooking.size !== searchParams.rooms.length}
+                        size="lg"
+                      >
+                        Réserver les chambres
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               <div className="space-y-4">
                 {rooms.map((room) => {
                   const selectedBoarding = selectedBoardings[room.id] || room.boardingType
@@ -242,11 +347,23 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
                   )
                   const displayPrice = currentBoardingOption?.pricePerNight || room.pricePerNight
                   const displayTotal = currentBoardingOption?.totalPrice || room.totalPrice
+                  const isSelected = selectedRoomsForBooking.has(room.id)
 
                   return (
-                    <Card key={room.id}>
+                    <Card key={room.id} className={isSelected ? 'border-2 border-primary' : ''}>
                       <CardContent className="p-6">
                         <div className="flex flex-col md:flex-row gap-6">
+                          {multiRoomMode && (
+                            <div className="flex items-start pt-2">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => handleToggleRoomSelection(room.id)}
+                                id={`room-select-${room.id}`}
+                                className="w-5 h-5"
+                              />
+                            </div>
+                          )}
+                          
                           <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
                             <img
                               src={room.image}
@@ -335,9 +452,19 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom }: HotelDetailsPa
                                   </div>
                                 )}
                               </div>
-                              <Button onClick={() => handleSelectRoom(room)}>
-                                Sélectionner
-                              </Button>
+                              {!multiRoomMode && (
+                                <Button onClick={() => handleSelectRoom(room)}>
+                                  Sélectionner
+                                </Button>
+                              )}
+                              {multiRoomMode && (
+                                <Button 
+                                  variant={isSelected ? 'default' : 'outline'}
+                                  onClick={() => handleToggleRoomSelection(room.id)}
+                                >
+                                  {isSelected ? 'Sélectionnée' : 'Sélectionner'}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </div>

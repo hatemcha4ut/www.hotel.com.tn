@@ -59,6 +59,7 @@ export interface Room {
   totalPrice: number
   image: string
   selectedBoarding?: string
+  roomIndex?: number
 }
 
 export interface GuestDetails {
