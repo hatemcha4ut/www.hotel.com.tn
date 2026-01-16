@@ -1,11 +1,7 @@
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
-import { CalendarBlank } from '@phosphor-icons/react'
-import { format, differenceInDays } from 'date-fns'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { format, differenceInDays, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
 
 interface DateRangePickerProps {
   checkIn?: Date | null
@@ -22,18 +18,25 @@ export function DateRangePicker({
   onCheckOutChange,
   language = 'fr',
 }: DateRangePickerProps) {
-  const [isCheckInOpen, setIsCheckInOpen] = useState(false)
-  const [isCheckOutOpen, setIsCheckOutOpen] = useState(false)
-
   const numberOfNights =
     checkIn && checkOut
       ? differenceInDays(checkOut, checkIn)
       : 0
 
-  const handleCheckInSelect = (date: Date | undefined) => {
-    if (date) {
+  const today = new Date().toISOString().split('T')[0]
+  
+  const checkInValue = checkIn ? format(checkIn, 'yyyy-MM-dd') : ''
+  const checkOutValue = checkOut ? format(checkOut, 'yyyy-MM-dd') : ''
+  
+  const minCheckOut = checkIn 
+    ? format(new Date(checkIn.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+    : today
+
+  const handleCheckInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    if (value) {
+      const date = parseISO(value)
       onCheckInChange(date)
-      setIsCheckInOpen(false)
       
       if (checkOut && date >= checkOut) {
         const nextDay = new Date(date.getTime() + 24 * 60 * 60 * 1000)
@@ -42,86 +45,48 @@ export function DateRangePicker({
     }
   }
 
-  const handleCheckOutSelect = (date: Date | undefined) => {
-    if (date) {
+  const handleCheckOutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    if (value) {
+      const date = parseISO(value)
       onCheckOutChange(date)
-      setIsCheckOutOpen(false)
     }
   }
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2">
-        <Popover open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-full justify-start text-left font-normal h-11',
-                !checkIn && 'text-muted-foreground'
-              )}
-            >
-              <CalendarBlank className="mr-2 h-4 w-4" />
-              <div className="flex flex-col items-start">
-                <span className="text-xs text-muted-foreground">Entrée</span>
-                <span className="text-sm">
-                  {checkIn ? format(checkIn, 'd MMM', { locale: fr }) : 'Date'}
-                </span>
-              </div>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={checkIn || undefined}
-              onSelect={handleCheckInSelect}
-              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-              locale={fr}
-              month={checkIn || new Date()}
-              weekStartsOn={1}
-            />
-          </PopoverContent>
-        </Popover>
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="check-in" className="text-xs font-medium text-muted-foreground">
+            Date d'entrée
+          </Label>
+          <Input
+            id="check-in"
+            type="date"
+            value={checkInValue}
+            min={today}
+            onChange={handleCheckInChange}
+            className="w-full"
+          />
+        </div>
 
-        <Popover open={isCheckOutOpen} onOpenChange={setIsCheckOutOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-full justify-start text-left font-normal h-11',
-                !checkOut && 'text-muted-foreground'
-              )}
-            >
-              <CalendarBlank className="mr-2 h-4 w-4" />
-              <div className="flex flex-col items-start">
-                <span className="text-xs text-muted-foreground">Sortie</span>
-                <span className="text-sm">
-                  {checkOut ? format(checkOut, 'd MMM', { locale: fr }) : 'Date'}
-                </span>
-              </div>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={checkOut || undefined}
-              onSelect={handleCheckOutSelect}
-              disabled={(date) => {
-                const today = new Date(new Date().setHours(0, 0, 0, 0))
-                if (date < today) return true
-                if (checkIn && date <= checkIn) return true
-                return false
-              }}
-              locale={fr}
-              month={checkOut || checkIn || new Date()}
-              weekStartsOn={1}
-            />
-          </PopoverContent>
-        </Popover>
+        <div className="space-y-1.5">
+          <Label htmlFor="check-out" className="text-xs font-medium text-muted-foreground">
+            Date de sortie
+          </Label>
+          <Input
+            id="check-out"
+            type="date"
+            value={checkOutValue}
+            min={minCheckOut}
+            onChange={handleCheckOutChange}
+            className="w-full"
+          />
+        </div>
       </div>
 
       {numberOfNights > 0 && (
-        <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 text-center">
+        <div className="bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-center">
           <p className="text-sm font-semibold text-primary">
             {numberOfNights} {numberOfNights === 1 ? 'nuitée' : 'nuitées'}
           </p>

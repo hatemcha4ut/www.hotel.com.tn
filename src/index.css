@@ -83,16 +83,16 @@ input[type="date"] {
   position: relative;
   color: var(--foreground);
   font-family: var(--font-body);
+  cursor: pointer;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
-  opacity: 0;
   cursor: pointer;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
+  filter: opacity(0.6);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: opacity(1);
 }
 
 input[type="date"]::-webkit-datetime-edit {
@@ -113,78 +113,4 @@ input[type="date"]::-webkit-datetime-edit-fields-wrapper {
   background-image: 
     linear-gradient(135deg, oklch(0.55 0.15 245 / 0.85) 0%, oklch(0.45 0.12 245 / 0.9) 100%),
     url('data:image/svg+xml,<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" stroke-width="1" opacity="0.1"/></pattern></defs><rect width="60" height="60" fill="url(%23grid)"/></svg>');
-}
-
-.rdp-day_range_start,
-.rdp-day_range_end {
-  background-color: oklch(0.55 0.15 245) !important;
-  color: white !important;
-  font-weight: 600;
-}
-
-.rdp-day_range_middle {
-  background-color: oklch(0.55 0.15 245 / 0.15) !important;
-  color: oklch(0.25 0.01 245) !important;
-  position: relative;
-}
-
-.rdp-day_range_middle:hover {
-  background-color: oklch(0.55 0.15 245 / 0.25) !important;
-}
-
-.rdp-day_selected {
-  background-color: oklch(0.55 0.15 245) !important;
-  color: white !important;
-}
-
-.rdp-day_selected:not(.rdp-day_range_start):not(.rdp-day_range_end) {
-  background-color: oklch(0.55 0.15 245 / 0.15) !important;
-  color: oklch(0.25 0.01 245) !important;
-}
-
-.rdp-day_range_start:hover,
-.rdp-day_range_end:hover {
-  background-color: oklch(0.5 0.15 245) !important;
-}
-
-.rdp-months {
-  width: 100%;
-}
-
-.rdp-month {
-  width: 100%;
-}
-
-.rdp-table {
-  width: 100%;
-  table-layout: fixed;
-}
-
-.rdp-head_cell {
-  width: 14.2857%;
-  text-align: center;
-}
-
-.rdp-cell {
-  width: 14.2857%;
-}
-
-.rdp-day {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  margin: 0 auto;
-}
-
-.rdp-caption {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-}
-
-.rdp-nav {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
