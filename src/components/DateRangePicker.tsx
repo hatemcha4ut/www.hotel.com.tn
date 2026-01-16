@@ -78,6 +78,7 @@ export function DateRangePicker({
               disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
               locale={fr}
               month={checkIn || new Date()}
+              weekStartsOn={1}
             />
           </PopoverContent>
         </Popover>
@@ -113,6 +114,7 @@ export function DateRangePicker({
               }}
               locale={fr}
               month={checkOut || checkIn || new Date()}
+              weekStartsOn={1}
             />
           </PopoverContent>
         </Popover>

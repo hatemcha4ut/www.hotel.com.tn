@@ -155,10 +155,25 @@ input[type="date"]::-webkit-datetime-edit-fields-wrapper {
   width: 100%;
 }
 
+.rdp-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.rdp-head_cell {
+  width: 14.2857%;
+  text-align: center;
+}
+
+.rdp-cell {
+  width: 14.2857%;
+}
+
 .rdp-day {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
+  margin: 0 auto;
 }
 
 .rdp-caption {
