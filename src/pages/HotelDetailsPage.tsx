@@ -339,140 +339,256 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
                 </Card>
               )}
               
-              <div className="space-y-4">
-                {rooms.map((room) => {
-                  const selectedBoarding = selectedBoardings[room.id] || room.boardingType
-                  const currentBoardingOption = room.boardingOptions?.find(
-                    b => b.type === selectedBoarding
-                  )
-                  const displayPrice = currentBoardingOption?.pricePerNight || room.pricePerNight
-                  const displayTotal = currentBoardingOption?.totalPrice || room.totalPrice
-                  const isSelected = selectedRoomsForBooking.has(room.id)
+              {multiRoomMode ? (
+                <Tabs defaultValue={rooms[0]?.id || ''} className="w-full">
+                  <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto">
+                    {rooms.map((room, idx) => {
+                      const isSelected = selectedRoomsForBooking.has(room.id)
+                      return (
+                        <TabsTrigger 
+                          key={room.id} 
+                          value={room.id}
+                          className="flex items-center gap-2 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                        >
+                          {isSelected && <Checkbox checked={true} className="w-4 h-4 pointer-events-none" />}
+                          {room.name}
+                        </TabsTrigger>
+                      )
+                    })}
+                  </TabsList>
+                  
+                  {rooms.map((room) => {
+                    const selectedBoarding = selectedBoardings[room.id] || room.boardingType
+                    const currentBoardingOption = room.boardingOptions?.find(
+                      b => b.type === selectedBoarding
+                    )
+                    const displayPrice = currentBoardingOption?.pricePerNight || room.pricePerNight
+                    const displayTotal = currentBoardingOption?.totalPrice || room.totalPrice
+                    const isSelected = selectedRoomsForBooking.has(room.id)
 
-                  return (
-                    <Card key={room.id} className={isSelected ? 'border-2 border-primary' : ''}>
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row gap-6">
-                          {multiRoomMode && (
-                            <div className="flex items-start pt-2">
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => handleToggleRoomSelection(room.id)}
-                                id={`room-select-${room.id}`}
-                                className="w-5 h-5"
-                              />
-                            </div>
-                          )}
-                          
-                          <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
-                            <img
-                              src={room.image}
-                              alt={room.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          
-                          <div className="flex-1">
-                            <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
-                            
-                            <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground mb-4">
-                              <div className="flex items-center gap-2">
-                                <Bed size={16} />
-                                <span>{room.bedConfig}</span>
+                    return (
+                      <TabsContent key={room.id} value={room.id} className="mt-4">
+                        <Card className={isSelected ? 'border-2 border-primary' : ''}>
+                          <CardContent className="p-6">
+                            <div className="flex flex-col md:flex-row gap-6">
+                              <div className="w-full md:w-64 h-48 rounded-lg overflow-hidden flex-shrink-0">
+                                <img
+                                  src={room.image}
+                                  alt={room.name}
+                                  className="w-full h-full object-cover"
+                                />
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Users size={16} />
-                                <span>Max {room.maxOccupancy} personnes</span>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {room.amenities.slice(0, 4).map((amenity, idx) => (
-                                <Badge key={idx} variant="secondary">
-                                  {amenity}
-                                </Badge>
-                              ))}
-                            </div>
-
-                            {room.boardingOptions && room.boardingOptions.length > 1 && (
-                              <div className="mb-4">
-                                <Label className="text-sm font-semibold mb-3 block">
-                                  Type de pension
-                                </Label>
-                                <RadioGroup
-                                  value={selectedBoarding}
-                                  onValueChange={(value) => handleBoardingChange(room.id, value)}
-                                  className="space-y-2"
-                                >
-                                  {room.boardingOptions.map((option) => (
-                                    <div
-                                      key={option.type}
-                                      className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                                    >
-                                      <RadioGroupItem value={option.type} id={`${room.id}-${option.type}`} />
-                                      <Label
-                                        htmlFor={`${room.id}-${option.type}`}
-                                        className="flex-1 flex items-center justify-between cursor-pointer"
-                                      >
-                                        <span className="font-medium">{option.type}</span>
-                                        <span className="text-sm text-primary font-semibold">
-                                          {option.pricePerNight} TND/nuit
-                                        </span>
-                                      </Label>
-                                    </div>
-                                  ))}
-                                </RadioGroup>
-                              </div>
-                            )}
-
-                            {(!room.boardingOptions || room.boardingOptions.length <= 1) && (
-                              <div className="mb-4">
-                                <Badge variant="outline" className="text-sm">
-                                  {room.boardingType}
-                                </Badge>
-                              </div>
-                            )}
-
-                            <p className="text-xs text-muted-foreground mb-4">
-                              {room.cancellationPolicy}
-                            </p>
-
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="text-sm text-muted-foreground">À partir de</div>
-                                <div className="text-2xl font-bold text-primary">
-                                  {displayPrice} TND
-                                  <span className="text-sm font-normal text-muted-foreground">
-                                    {' '}/nuit
-                                  </span>
+                              
+                              <div className="flex-1">
+                                <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
+                                
+                                <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground mb-4">
+                                  <div className="flex items-center gap-2">
+                                    <Bed size={16} />
+                                    <span>{room.bedConfig}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Users size={16} />
+                                    <span>Max {room.maxOccupancy} personnes</span>
+                                  </div>
                                 </div>
-                                {searchParams.checkIn && searchParams.checkOut && (
-                                  <div className="text-sm text-muted-foreground">
-                                    Total: {displayTotal} TND
+
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                  {room.amenities.slice(0, 4).map((amenity, idx) => (
+                                    <Badge key={idx} variant="secondary">
+                                      {amenity}
+                                    </Badge>
+                                  ))}
+                                </div>
+
+                                {room.boardingOptions && room.boardingOptions.length > 1 && (
+                                  <div className="mb-4">
+                                    <Label className="text-sm font-semibold mb-3 block">
+                                      Type de pension
+                                    </Label>
+                                    <RadioGroup
+                                      value={selectedBoarding}
+                                      onValueChange={(value) => handleBoardingChange(room.id, value)}
+                                      className="space-y-2"
+                                    >
+                                      {room.boardingOptions.map((option) => (
+                                        <div
+                                          key={option.type}
+                                          className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                                        >
+                                          <RadioGroupItem value={option.type} id={`${room.id}-${option.type}`} />
+                                          <Label
+                                            htmlFor={`${room.id}-${option.type}`}
+                                            className="flex-1 flex items-center justify-between cursor-pointer"
+                                          >
+                                            <span className="font-medium">{option.type}</span>
+                                            <span className="text-sm text-primary font-semibold">
+                                              {option.pricePerNight} TND/nuit
+                                            </span>
+                                          </Label>
+                                        </div>
+                                      ))}
+                                    </RadioGroup>
                                   </div>
                                 )}
+
+                                {(!room.boardingOptions || room.boardingOptions.length <= 1) && (
+                                  <div className="mb-4">
+                                    <Badge variant="outline" className="text-sm">
+                                      {room.boardingType}
+                                    </Badge>
+                                  </div>
+                                )}
+
+                                <p className="text-xs text-muted-foreground mb-4">
+                                  {room.cancellationPolicy}
+                                </p>
+
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="text-sm text-muted-foreground">À partir de</div>
+                                    <div className="text-2xl font-bold text-primary">
+                                      {displayPrice} TND
+                                      <span className="text-sm font-normal text-muted-foreground">
+                                        {' '}/nuit
+                                      </span>
+                                    </div>
+                                    {searchParams.checkIn && searchParams.checkOut && (
+                                      <div className="text-sm text-muted-foreground">
+                                        Total: {displayTotal} TND
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button 
+                                    variant={isSelected ? 'default' : 'outline'}
+                                    onClick={() => handleToggleRoomSelection(room.id)}
+                                    size="lg"
+                                  >
+                                    {isSelected ? 'Sélectionnée' : 'Sélectionner'}
+                                  </Button>
+                                </div>
                               </div>
-                              {!multiRoomMode && (
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                    )
+                  })}
+                </Tabs>
+              ) : (
+                <div className="space-y-4">
+                  {rooms.map((room) => {
+                    const selectedBoarding = selectedBoardings[room.id] || room.boardingType
+                    const currentBoardingOption = room.boardingOptions?.find(
+                      b => b.type === selectedBoarding
+                    )
+                    const displayPrice = currentBoardingOption?.pricePerNight || room.pricePerNight
+                    const displayTotal = currentBoardingOption?.totalPrice || room.totalPrice
+
+                    return (
+                      <Card key={room.id}>
+                        <CardContent className="p-6">
+                          <div className="flex flex-col md:flex-row gap-6">
+                            <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
+                              <img
+                                src={room.image}
+                                alt={room.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            
+                            <div className="flex-1">
+                              <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
+                              
+                              <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground mb-4">
+                                <div className="flex items-center gap-2">
+                                  <Bed size={16} />
+                                  <span>{room.bedConfig}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Users size={16} />
+                                  <span>Max {room.maxOccupancy} personnes</span>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {room.amenities.slice(0, 4).map((amenity, idx) => (
+                                  <Badge key={idx} variant="secondary">
+                                    {amenity}
+                                  </Badge>
+                                ))}
+                              </div>
+
+                              {room.boardingOptions && room.boardingOptions.length > 1 && (
+                                <div className="mb-4">
+                                  <Label className="text-sm font-semibold mb-3 block">
+                                    Type de pension
+                                  </Label>
+                                  <RadioGroup
+                                    value={selectedBoarding}
+                                    onValueChange={(value) => handleBoardingChange(room.id, value)}
+                                    className="space-y-2"
+                                  >
+                                    {room.boardingOptions.map((option) => (
+                                      <div
+                                        key={option.type}
+                                        className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                                      >
+                                        <RadioGroupItem value={option.type} id={`${room.id}-${option.type}`} />
+                                        <Label
+                                          htmlFor={`${room.id}-${option.type}`}
+                                          className="flex-1 flex items-center justify-between cursor-pointer"
+                                        >
+                                          <span className="font-medium">{option.type}</span>
+                                          <span className="text-sm text-primary font-semibold">
+                                            {option.pricePerNight} TND/nuit
+                                          </span>
+                                        </Label>
+                                      </div>
+                                    ))}
+                                  </RadioGroup>
+                                </div>
+                              )}
+
+                              {(!room.boardingOptions || room.boardingOptions.length <= 1) && (
+                                <div className="mb-4">
+                                  <Badge variant="outline" className="text-sm">
+                                    {room.boardingType}
+                                  </Badge>
+                                </div>
+                              )}
+
+                              <p className="text-xs text-muted-foreground mb-4">
+                                {room.cancellationPolicy}
+                              </p>
+
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-sm text-muted-foreground">À partir de</div>
+                                  <div className="text-2xl font-bold text-primary">
+                                    {displayPrice} TND
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                      {' '}/nuit
+                                    </span>
+                                  </div>
+                                  {searchParams.checkIn && searchParams.checkOut && (
+                                    <div className="text-sm text-muted-foreground">
+                                      Total: {displayTotal} TND
+                                    </div>
+                                  )}
+                                </div>
                                 <Button onClick={() => handleSelectRoom(room)}>
                                   Sélectionner
                                 </Button>
-                              )}
-                              {multiRoomMode && (
-                                <Button 
-                                  variant={isSelected ? 'default' : 'outline'}
-                                  onClick={() => handleToggleRoomSelection(room.id)}
-                                >
-                                  {isSelected ? 'Sélectionnée' : 'Sélectionner'}
-                                </Button>
-                              )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
