@@ -407,7 +407,11 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
                         <TabsTrigger 
                           key={room.id} 
                           value={room.id}
-                          className="flex items-center gap-2 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2"
+                          className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 ${
+                            applySameBoardingToAll 
+                              ? 'bg-primary text-primary-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground' 
+                              : 'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+                          }`}
                         >
                           {isSelected && <div className="w-2 h-2 rounded-full bg-accent" />}
                           <span className="font-semibold">Chambre {roomNumber}</span>
