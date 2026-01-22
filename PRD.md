@@ -1,6 +1,6 @@
 # Planning Guide
 
-Hotel Cities by American Tours - A comprehensive hotel booking platform to search, compare, and book accommodations across popular destinations worldwide with real-time availability and secure payment processing.
+hotel.com.tn - A comprehensive hotel booking platform to search, compare, and book accommodations across popular destinations in Tunisia with real-time availability and secure payment processing.
 
 **Experience Qualities**:
 1. **Effortless** - Intuitive search and booking flow that guides users from discovery to confirmation without friction

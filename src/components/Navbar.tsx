@@ -6,7 +6,7 @@ import { useApp } from '@/contexts/AppContext'
 import { t } from '@/lib/translations'
 import { AuthDialog } from '@/components/AuthDialog'
 import { useKV } from '@github/spark/hooks'
-import hotelCitiesLogo from '@/assets/images/hotel-cities-logo.svg'
+import hotelCitiesLogo from '@/assets/images/logo hotel.com.tn.svg'
 
 export function Navbar() {
   const { language, setLanguage } = useApp()
@@ -76,7 +76,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <a href="/" className="flex items-center gap-3">
-              <img src={hotelCitiesLogo} alt="Hotel Cities" className="h-10 w-10 object-contain" />
+              <img src={hotelCitiesLogo} alt="hotel.com.tn" className="h-10 w-10 object-contain" />
             </a>
             <NavLinks />
           </div>
