@@ -8,23 +8,23 @@
 }
 
 :root {
-  --background: oklch(0.98 0.005 85);
-  --foreground: oklch(0.25 0.01 245);
+  --background: oklch(0.98 0.005 240);
+  --foreground: oklch(0.25 0.01 240);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.01 245);
+  --card-foreground: oklch(0.25 0.01 240);
   
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.01 245);
+  --popover-foreground: oklch(0.25 0.01 240);
 
-  --primary: oklch(0.55 0.15 245);
+  --primary: oklch(0.42 0.15 240);
   --primary-foreground: oklch(1 0 0);
 
   --secondary: oklch(0.88 0.08 50);
   --secondary-foreground: oklch(0.2 0.02 50);
 
-  --muted: oklch(0.95 0.01 245);
-  --muted-foreground: oklch(0.5 0.01 245);
+  --muted: oklch(0.95 0.01 240);
+  --muted-foreground: oklch(0.5 0.01 240);
 
   --accent: oklch(0.75 0.15 75);
   --accent-foreground: oklch(0.2 0.02 75);
@@ -32,9 +32,9 @@
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
 
-  --border: oklch(0.9 0.01 245);
-  --input: oklch(0.9 0.01 245);
-  --ring: oklch(0.55 0.15 245);
+  --border: oklch(0.9 0.01 240);
+  --input: oklch(0.9 0.01 240);
+  --ring: oklch(0.42 0.15 240);
 
   --radius: 0.75rem;
 }
@@ -111,6 +111,6 @@ input[type="date"]::-webkit-datetime-edit-fields-wrapper {
 
 .hero-pattern {
   background-image: 
-    linear-gradient(135deg, oklch(0.55 0.15 245 / 0.85) 0%, oklch(0.45 0.12 245 / 0.9) 100%),
+    linear-gradient(135deg, oklch(0.42 0.15 240 / 0.85) 0%, oklch(0.35 0.12 240 / 0.9) 100%),
     url('data:image/svg+xml,<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" stroke-width="1" opacity="0.1"/></pattern></defs><rect width="60" height="60" fill="url(%23grid)"/></svg>');
 }
