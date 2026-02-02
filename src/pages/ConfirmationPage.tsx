@@ -83,7 +83,7 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
   }
 
   const handleAddToGoogleWallet = () => {
-    const hotelName = bookingData?.hotel?.name || 'hotel.com.tn'
+    const hotelName = bookingData?.hotel?.name || 'www.hotel.com.tn'
     const checkIn = bookingData?.searchParams?.checkIn 
       ? format(new Date(bookingData.searchParams.checkIn), 'dd MMMM yyyy', { locale: fr })
       : 'À confirmer'
@@ -124,7 +124,7 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
   }
 
   const handleAddToAppleWallet = () => {
-    const hotelName = bookingData?.hotel?.name || 'hotel.com.tn'
+    const hotelName = bookingData?.hotel?.name || 'www.hotel.com.tn'
     const checkIn = bookingData?.searchParams?.checkIn 
       ? format(new Date(bookingData.searchParams.checkIn), 'dd MMMM yyyy', { locale: fr })
       : 'À confirmer'
@@ -266,7 +266,7 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
       </head>
       <body>
         <div class="header">
-          <div class="logo">hotel.com.tn</div>
+          <div class="logo">www.hotel.com.tn</div>
           <p>Voucher de Réservation</p>
         </div>
         
@@ -358,7 +358,7 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
     return (
       <div className="space-y-6 p-6 bg-white">
         <div className="text-center border-b-4 border-primary pb-6">
-          <h2 className="text-2xl font-bold text-primary mb-2">hotel.com.tn</h2>
+          <h2 className="text-2xl font-bold text-primary mb-2">www.hotel.com.tn</h2>
           <p className="text-muted-foreground">Voucher de Réservation</p>
         </div>
 

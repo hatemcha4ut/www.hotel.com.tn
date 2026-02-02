@@ -76,7 +76,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <a href="/" className="flex items-center gap-3">
-              <img src={hotelCitiesLogo} alt="hotel.com.tn" className="h-10 w-10 object-contain" />
+              <img src={hotelCitiesLogo} alt="www.hotel.com.tn" className="h-10 w-10 object-contain" />
             </a>
             <NavLinks />
           </div>

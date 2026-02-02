@@ -18,7 +18,7 @@ export function Footer({ onNavigate }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img src={hotelCitiesLogo} alt="hotel.com.tn" className="h-14 w-auto rounded-lg" />
+              <img src={hotelCitiesLogo} alt="www.hotel.com.tn" className="h-14 w-auto rounded-lg" />
             </div>
             <p className="text-background/80 text-sm">
               Par American Tours - Facilitateur de loisir en Tunisie.
@@ -87,7 +87,7 @@ export function Footer({ onNavigate }: FooterProps) {
         </div>
 
         <div className="border-t border-background/20 pt-8 text-center text-sm text-background/80">
-          <p>&copy; {new Date().getFullYear()} hotel.com.tn - American Tours. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} www.hotel.com.tn - American Tours. All rights reserved.</p>
         </div>
       </div>
     </footer>
