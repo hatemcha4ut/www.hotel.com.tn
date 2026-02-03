@@ -1,20 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { City } from '@/types'
+import { tunisianCities } from '@/constants/cities'
 import { cn } from '@/lib/utils'
 
 const BLUR_DELAY_MS = 100
-
-const tunisianCities: City[] = [
-  { id: '1', name: 'Tunis', country: 'Tunisia' },
-  { id: '2', name: 'Sousse', country: 'Tunisia' },
-  { id: '3', name: 'Hammamet', country: 'Tunisia' },
-  { id: '4', name: 'Djerba', country: 'Tunisia' },
-  { id: '5', name: 'Monastir', country: 'Tunisia' },
-  { id: '6', name: 'Mahdia', country: 'Tunisia' },
-  { id: '7', name: 'Tozeur', country: 'Tunisia' },
-  { id: '8', name: 'Sfax', country: 'Tunisia' },
-]
 
 interface CityAutocompleteProps {
   onSelect: (cityId: string) => void
