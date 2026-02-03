@@ -33,7 +33,7 @@ export function CityAutocomplete({
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const listboxId = useId()
-  const blurTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
+  const blurTimeoutRef = useRef<number | null>(null)
   const highlightedCityIdRef = useRef<string | null>(null)
 
   useEffect(() => {
