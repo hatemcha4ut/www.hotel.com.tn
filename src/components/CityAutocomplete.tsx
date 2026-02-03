@@ -4,6 +4,7 @@ import { City } from '@/types'
 import { tunisianCities } from '@/constants/cities'
 import { cn } from '@/lib/utils'
 
+// Allow click events to fire before closing the dropdown.
 const BLUR_DELAY_MS = 100
 
 interface CityAutocompleteProps {
@@ -15,7 +16,7 @@ interface CityAutocompleteProps {
 }
 
 const normalizeValue = (value: string) =>
-  value
+  (value ?? '')
     .toLowerCase()
     .trim()
     .normalize('NFD')
