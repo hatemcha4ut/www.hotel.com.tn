@@ -1,3 +1,5 @@
+import { useCallback } from 'react'
+import type { SyntheticEvent } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -41,6 +43,14 @@ interface HotelCardProps {
 export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
   const { language } = useApp()
   const imageSrc = resolveImageSrc(hotel.image)
+  const handleImageError = useCallback(
+    (event: SyntheticEvent<HTMLImageElement>) => {
+      event.currentTarget.onerror = null
+      event.currentTarget.src = PLACEHOLDER_IMAGE
+      event.currentTarget.alt = `${hotel.name} (placeholder)`
+    },
+    [hotel.name]
+  )
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
@@ -50,11 +60,7 @@ export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
           alt={hotel.name}
           className="w-full h-full object-cover"
           loading="lazy"
-          onError={(event) => {
-            event.currentTarget.onerror = null
-            event.currentTarget.src = PLACEHOLDER_IMAGE
-            event.currentTarget.alt = `${hotel.name} (placeholder)`
-          }}
+          onError={handleImageError}
         />
         {hotel.promotion && (
           <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground flex items-center gap-1">
