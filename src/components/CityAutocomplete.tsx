@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { City } from '@/types'
 import { cn } from '@/lib/utils'
@@ -42,6 +42,7 @@ export function CityAutocomplete({
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const listboxId = useId()
+  const blurTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!selectedCityId) {
@@ -83,6 +84,14 @@ export function CityAutocomplete({
     setHighlightedIndex(0)
   }, [filteredCities, isOpen])
 
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        window.clearTimeout(blurTimeoutRef.current)
+      }
+    }
+  }, [])
+
   return (
     <div className={cn('relative', className)}>
       <Input
@@ -94,7 +103,10 @@ export function CityAutocomplete({
         }}
         onFocus={() => setIsOpen(true)}
         onBlur={() => {
-          window.setTimeout(() => setIsOpen(false), BLUR_DELAY_MS)
+          if (blurTimeoutRef.current) {
+            window.clearTimeout(blurTimeoutRef.current)
+          }
+          blurTimeoutRef.current = window.setTimeout(() => setIsOpen(false), BLUR_DELAY_MS)
         }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowDown') {
@@ -153,7 +165,10 @@ export function CityAutocomplete({
                 'cursor-pointer px-3 py-2 text-foreground hover:bg-accent hover:text-accent-foreground',
                 index === highlightedIndex && 'bg-accent text-accent-foreground'
               )}
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={(event) => {
+                // Prevent blur so click can register before the list closes.
+                event.preventDefault()
+              }}
               onMouseEnter={() => setHighlightedIndex(index)}
               onClick={() => handleSelect(city)}
             >
