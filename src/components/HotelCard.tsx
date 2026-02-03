@@ -11,10 +11,12 @@ import { useApp } from '@/contexts/AppContext'
 const PLACEHOLDER_IMAGE =
   'https://images.unsplash.com/photo-1501117716987-c8e1ecb210b1?w=800&h=600&fit=crop'
 
-const getImageBaseUrl = () =>
-  (import.meta.env.VITE_API_BASE_URL ?? 'https://admin.mygo.co').replace(/\/$/, '')
+const IMAGE_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'https://admin.mygo.co').replace(
+  /\/$/,
+  ''
+)
 
-const resolveImageSrc = (image: string | undefined, baseUrl: string) => {
+const resolveImageSrc = (image: string | undefined) => {
   const trimmed = image?.trim()
   if (!trimmed) {
     return PLACEHOLDER_IMAGE
@@ -29,10 +31,10 @@ const resolveImageSrc = (image: string | undefined, baseUrl: string) => {
   }
 
   if (trimmed.startsWith('/')) {
-    return `${baseUrl}${trimmed}`
+    return `${IMAGE_BASE_URL}${trimmed}`
   }
 
-  return `${baseUrl}/${trimmed}`
+  return `${IMAGE_BASE_URL}/${trimmed}`
 }
 
 interface HotelCardProps {
@@ -42,17 +44,14 @@ interface HotelCardProps {
 
 export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
   const { language } = useApp()
-  const imageSrc = useMemo(
-    () => resolveImageSrc(hotel.image, getImageBaseUrl()),
-    [hotel.image]
-  )
+  const imageSrc = useMemo(() => resolveImageSrc(hotel.image), [hotel.image])
   const handleImageError = useCallback(
     (event: SyntheticEvent<HTMLImageElement>) => {
       event.currentTarget.onerror = null
       event.currentTarget.src = PLACEHOLDER_IMAGE
-      event.currentTarget.alt = `${hotel.name} (placeholder)`
+      event.currentTarget.alt = `${event.currentTarget.alt} (placeholder)`
     },
-    [hotel.name]
+    []
   )
 
   return (
