@@ -4,14 +4,7 @@ import { MapPin, Star } from '@phosphor-icons/react'
 import type { Hotel, MyGoHotel } from '@/types'
 import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
-import { getMyGoHotelIdentifier, MYGO_BASE_URL } from '@/lib/hotel'
-
-const isMyGoHotel = (value: Hotel | MyGoHotel): value is MyGoHotel => {
-  if (value.type) {
-    return value.type === 'mygo'
-  }
-  return 'Name' in value
-}
+import { getMyGoHotelIdentifier, isMyGoHotel, MYGO_BASE_URL } from '@/lib/hotel'
 
 interface HotelCardProps {
   hotel: Hotel | MyGoHotel
