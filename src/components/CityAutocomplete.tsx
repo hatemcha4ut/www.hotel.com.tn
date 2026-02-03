@@ -20,6 +20,7 @@ interface CityAutocompleteProps {
   onSelect: (cityId: string) => void
   selectedCityId?: string
   placeholder?: string
+  cities?: City[]
   className?: string
 }
 
@@ -33,7 +34,8 @@ const normalizeValue = (value: string) =>
 export function CityAutocomplete({
   onSelect,
   selectedCityId,
-  placeholder = 'Où allez-vous ?',
+  placeholder = '',
+  cities = tunisianCities,
   className,
 }: CityAutocompleteProps) {
   const [query, setQuery] = useState('')
@@ -45,7 +47,7 @@ export function CityAutocomplete({
       setQuery('')
       return
     }
-    const selectedCity = tunisianCities.find((city) => city.id === selectedCityId)
+    const selectedCity = cities.find((city) => city.id === selectedCityId)
     if (selectedCity) {
       setQuery(selectedCity.name)
     }
@@ -54,10 +56,10 @@ export function CityAutocomplete({
   const filteredCities = useMemo(() => {
     const normalizedQuery = normalizeValue(query)
     if (!normalizedQuery) {
-      return tunisianCities
+      return cities
     }
-    return tunisianCities.filter((city) => normalizeValue(city.name).includes(normalizedQuery))
-  }, [query])
+    return cities.filter((city) => normalizeValue(city.name).includes(normalizedQuery))
+  }, [cities, query])
 
   const listId = `${listboxId}-listbox`
 
