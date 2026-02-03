@@ -1,12 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const requiredVariables = {
+  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+}
 
-const missingVariables = [
-  !supabaseUrl ? 'VITE_SUPABASE_URL' : null,
-  !supabaseAnonKey ? 'VITE_SUPABASE_ANON_KEY' : null,
-].filter(Boolean)
+const missingVariables = Object.entries(requiredVariables)
+  .filter(([, value]) => !value || value.trim() === '')
+  .map(([key]) => key)
 
 if (missingVariables.length > 0) {
   throw new Error(
@@ -14,4 +15,7 @@ if (missingVariables.length > 0) {
   )
 }
 
-export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
+export const supabaseClient = createClient(
+  requiredVariables.VITE_SUPABASE_URL as string,
+  requiredVariables.VITE_SUPABASE_ANON_KEY as string
+)
