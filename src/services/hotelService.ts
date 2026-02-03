@@ -1,9 +1,15 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
 // API Configuration
-const API_ENDPOINT = 'https://admin.mygo.co/api/hotel/HotelSearch';
+const API_BASE_URL = 'https://admin.mygo.co/api/hotel';
 const API_LOGIN = 'XMLAMC';
 const API_PASSWORD = '-G9hkxDSXXYUtwcx73H6';
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 // TypeScript Interfaces for the API request structure
 interface Credential {
@@ -21,7 +27,6 @@ interface Filters {
   Keywords: string;
   Category: number[];
   OnlyAvailable: boolean;
-  Tags: string[];
 }
 
 interface RoomConfig {
@@ -50,9 +55,10 @@ export interface SearchParams {
 }
 
 // API Response type (can be expanded based on actual API response)
+export type HotelSearchResult = Record<string, unknown>;
+
 export interface HotelSearchResponse {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+  HotelSearch?: HotelSearchResult[];
 }
 
 /**
@@ -60,7 +66,7 @@ export interface HotelSearchResponse {
  * @param params - Search parameters including dates, city, and room configuration
  * @returns Promise with the API response
  */
-export async function searchHotels(params: SearchParams): Promise<HotelSearchResponse> {
+export async function searchHotels(params: SearchParams): Promise<HotelSearchResult[]> {
   const requestBody: HotelSearchRequestBody = {
     Credential: {
       Login: API_LOGIN,
@@ -76,7 +82,6 @@ export async function searchHotels(params: SearchParams): Promise<HotelSearchRes
         Keywords: '',
         Category: [],
         OnlyAvailable: false,
-        Tags: [],
       },
       Rooms: [
         {
@@ -88,31 +93,27 @@ export async function searchHotels(params: SearchParams): Promise<HotelSearchRes
   };
 
   try {
-    const response = await axios.post<HotelSearchResponse>(API_ENDPOINT, requestBody, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await apiClient.post<HotelSearchResponse>('/HotelSearch', requestBody);
+    const hotelSearch = response.data?.HotelSearch;
 
-    return response.data;
+    if (!Array.isArray(hotelSearch)) {
+      const actualType = hotelSearch === null ? 'null' : typeof hotelSearch;
+      throw new Error(
+        `Invalid hotel search response: expected array but received ${actualType}`
+      );
+    }
+
+    return hotelSearch;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError;
-      // Log error without exposing sensitive data
       console.error('Hotel Search API Error:', {
-        status: axiosError.response?.status,
-        statusText: axiosError.response?.statusText,
-        message: axiosError.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        message: error.message,
       });
 
-      // Log response data separately for debugging (only non-sensitive info)
-      if (axiosError.response?.data) {
-        console.error('API Response:', axiosError.response.data);
-      }
-
-      // Re-throw with status info
       throw new Error(
-        `Hotel search API failed: ${axiosError.response?.status || 'Network Error'} - ${axiosError.message}`
+        `Hotel search API failed: ${error.response?.status || 'Network Error'} - ${error.message}`
       );
     }
 
