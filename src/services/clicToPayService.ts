@@ -27,7 +27,7 @@ export const clicToPayService = {
     }
 
     const payload = (await response.json()) as Partial<ClicToPayRedirectParams>
-    if (!payload.actionUrl || !payload.params) {
+    if (!payload.params) {
       throw new Error('Réponse ClicToPay invalide.')
     }
 
