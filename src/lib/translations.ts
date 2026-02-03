@@ -27,6 +27,7 @@ type TranslationKey =
   | 'search.removeRoom'
   | 'search.searchHotels'
   | 'search.errorMessage'
+  | 'search.validationWarning'
   | 'common.from'
   | 'common.perNight'
   | 'common.viewDetails'
@@ -63,6 +64,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.removeRoom': 'Supprimer',
     'search.searchHotels': 'Rechercher',
     'search.errorMessage': 'Une erreur est survenue. Veuillez réessayer.',
+    'search.validationWarning': 'Veuillez sélectionner une ville ou saisir un nom d\'hôtel.',
     'common.from': 'À partir de',
     'common.perNight': 'par nuit',
     'common.viewDetails': 'Voir les détails',
@@ -98,6 +100,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.removeRoom': 'Remove',
     'search.searchHotels': 'Search',
     'search.errorMessage': 'Something went wrong. Please try again.',
+    'search.validationWarning': 'Please select a city or enter a hotel name.',
     'common.from': 'From',
     'common.perNight': 'per night',
     'common.viewDetails': 'View Details',
@@ -133,6 +136,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.removeRoom': 'حذف',
     'search.searchHotels': 'بحث',
     'search.errorMessage': 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+    'search.validationWarning': 'يرجى اختيار مدينة أو إدخال اسم فندق.',
     'common.from': 'ابتداءً من',
     'common.perNight': 'لكل ليلة',
     'common.viewDetails': 'عرض التفاصيل',

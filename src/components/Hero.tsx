@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import { CityAutocomplete } from '@/components/CityAutocomplete'
 import { MagnifyingGlass, Users, Minus, Plus, X } from '@phosphor-icons/react'
@@ -13,6 +14,7 @@ import { useApp } from '@/contexts/AppContext'
 import { t } from '@/lib/translations'
 import { Hotel } from '@/types'
 import { apiClient } from '@/services/apiClient'
+import { toast } from 'sonner'
 
 interface SearchWidgetProps {
   onSearch: () => void
@@ -96,13 +98,15 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
     
     console.log('[Search] Click handler entry')
     
-    // Validation
-    if (searchParams.searchMode === 'city' && !searchParams.cityId) {
-      console.log('[Search] Validation failed: cityId required')
-      return
-    }
-    if (searchParams.searchMode === 'hotel' && (!searchParams.hotelName || searchParams.hotelName.trim() === '')) {
-      console.log('[Search] Validation failed: hotelName required')
+    // Check if both city and hotel are empty/missing
+    const hasCity = Boolean(searchParams.cityId)
+    const hasHotel = Boolean(searchParams.hotelName?.trim())
+    
+    if (!hasCity && !hasHotel) {
+      console.log('[Search] blocked: missing city/hotel')
+      toast.warning(t('search.validationWarning', language), {
+        duration: 4000,
+      })
       return
     }
     
