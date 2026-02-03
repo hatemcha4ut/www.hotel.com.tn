@@ -54,7 +54,7 @@ export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
           onError={(event) => {
             event.currentTarget.onerror = null
             event.currentTarget.src = PLACEHOLDER_IMAGE
-            event.currentTarget.alt = 'Hotel placeholder image'
+            event.currentTarget.alt = `${hotel.name} (placeholder)`
           }}
         />
         {hotel.promotion && (
