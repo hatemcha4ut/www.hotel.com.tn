@@ -26,7 +26,7 @@ export function ClicToPayRedirect({ amount, orderId }: ClicToPayRedirectProps) {
           setErrorMessage(
             error instanceof Error
               ? error.message
-              : "Une erreur inattendue s'est produite lors de la préparation de la redirection. Veuillez réessayer."
+              : "Une erreur inattendue s'est produite lors de la préparation de la redirection. Veuillez réessayer ou contacter notre support."
           )
         }
       }
