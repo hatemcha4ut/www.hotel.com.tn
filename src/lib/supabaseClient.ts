@@ -6,7 +6,7 @@ const requiredVariables = {
 }
 
 const missingVariables = Object.entries(requiredVariables)
-  .filter(([, value]) => !value || value.trim() === '')
+  .filter(([, value]) => typeof value !== 'string' || value.trim() === '')
   .map(([key]) => key)
 
 if (missingVariables.length > 0) {
