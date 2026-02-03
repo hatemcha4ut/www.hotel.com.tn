@@ -6,12 +6,11 @@ import { Hotel } from '@/types'
 import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
 
-const IMAGE_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'https://admin.mygo.co').replace(
-  /\/$/,
-  ''
-)
 const PLACEHOLDER_IMAGE =
   'https://images.unsplash.com/photo-1501117716987-c8e1ecb210b1?w=800&h=600&fit=crop'
+
+const getImageBaseUrl = () =>
+  (import.meta.env.VITE_API_BASE_URL ?? 'https://admin.mygo.co').replace(/\/$/, '')
 
 const resolveImageSrc = (image: string | undefined) => {
   const trimmed = image?.trim()
@@ -28,10 +27,10 @@ const resolveImageSrc = (image: string | undefined) => {
   }
 
   if (trimmed.startsWith('/')) {
-    return `${IMAGE_BASE_URL}${trimmed}`
+    return `${getImageBaseUrl()}${trimmed}`
   }
 
-  return `${IMAGE_BASE_URL}/${trimmed}`
+  return `${getImageBaseUrl()}/${trimmed}`
 }
 
 interface HotelCardProps {
