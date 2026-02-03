@@ -26,6 +26,7 @@ type TranslationKey =
   | 'search.addRoom'
   | 'search.removeRoom'
   | 'search.searchHotels'
+  | 'search.errorMessage'
   | 'common.from'
   | 'common.perNight'
   | 'common.viewDetails'
@@ -59,6 +60,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.addRoom': 'Ajouter une chambre',
     'search.removeRoom': 'Supprimer',
     'search.searchHotels': 'Rechercher',
+    'search.errorMessage': 'Une erreur est survenue. Veuillez réessayer.',
     'common.from': 'À partir de',
     'common.perNight': 'par nuit',
     'common.viewDetails': 'Voir les détails',
@@ -91,6 +93,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.addRoom': 'Add room',
     'search.removeRoom': 'Remove',
     'search.searchHotels': 'Search',
+    'search.errorMessage': 'Something went wrong. Please try again.',
     'common.from': 'From',
     'common.perNight': 'per night',
     'common.viewDetails': 'View Details',
@@ -123,6 +126,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.addRoom': 'إضافة غرفة',
     'search.removeRoom': 'حذف',
     'search.searchHotels': 'بحث',
+    'search.errorMessage': 'حدث خطأ. يرجى المحاولة مرة أخرى.',
     'common.from': 'ابتداءً من',
     'common.perNight': 'لكل ليلة',
     'common.viewDetails': 'عرض التفاصيل',

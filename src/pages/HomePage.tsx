@@ -11,9 +11,10 @@ import { useApp } from '@/contexts/AppContext'
 interface HomePageProps {
   onSearch: () => void
   onViewHotel: (hotelId: string) => void
+  onResultsFound: (hotels: Hotel[]) => void
 }
 
-export function HomePage({ onSearch, onViewHotel }: HomePageProps) {
+export function HomePage({ onSearch, onViewHotel, onResultsFound }: HomePageProps) {
   const [popularHotels, setPopularHotels] = useState<Hotel[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -33,7 +34,7 @@ export function HomePage({ onSearch, onViewHotel }: HomePageProps) {
 
   return (
     <div>
-      <Hero onSearch={onSearch} />
+      <Hero onSearch={onSearch} onResultsFound={onResultsFound} />
       <FeaturedDestinations />
       <DealsSection onViewHotel={onViewHotel} />
       <WhyBookWithUs />

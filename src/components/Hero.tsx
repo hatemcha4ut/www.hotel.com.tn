@@ -8,20 +8,23 @@ import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import { MagnifyingGlass, Users, Minus, Plus, X } from '@phosphor-icons/react'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import { format } from 'date-fns'
 import { useApp } from '@/contexts/AppContext'
 import { t } from '@/lib/translations'
 import { api } from '@/lib/api'
-import { City, RoomGuests } from '@/types'
+import { City, Hotel } from '@/types'
+import { apiClient } from '@/services/apiClient'
 
 interface SearchWidgetProps {
   onSearch: () => void
+  onResultsFound: (hotels: Hotel[]) => void
 }
 
-export function SearchWidget({ onSearch }: SearchWidgetProps) {
+export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
   const { language, searchParams, setSearchParams } = useApp()
   const [cities, setCities] = useState<City[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     api.getCities().then(setCities)
@@ -90,14 +93,30 @@ export function SearchWidget({ onSearch }: SearchWidgetProps) {
     }
   }
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (searchParams.searchMode === 'city' && !searchParams.cityId) {
       return
     }
     if (searchParams.searchMode === 'hotel' && (!searchParams.hotelName || searchParams.hotelName.trim() === '')) {
       return
     }
-    onSearch()
+    setIsLoading(true)
+    setError(false)
+    try {
+      const results = await apiClient.searchHotels({
+        cityId: searchParams.cityId,
+        hotelName: searchParams.hotelName,
+        checkIn: searchParams.checkIn ? format(searchParams.checkIn, 'yyyy-MM-dd') : undefined,
+        checkOut: searchParams.checkOut ? format(searchParams.checkOut, 'yyyy-MM-dd') : undefined,
+      })
+      onResultsFound(results)
+      onSearch()
+    } catch (err) {
+      console.error('Error searching hotels:', err)
+      setError(true)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const totalAdults = searchParams.rooms.reduce((sum, room) => sum + room.adults, 0)
@@ -301,15 +320,25 @@ export function SearchWidget({ onSearch }: SearchWidgetProps) {
         </div>
       </div>
 
-      <Button size="lg" className="w-full mt-6" onClick={handleSearch}>
-        <MagnifyingGlass size={20} className="mr-2" />
-        {t('search.searchHotels', language)}
+      <Button size="lg" className="w-full mt-6" onClick={handleSearch} disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            {t('common.loading', language)}
+          </>
+        ) : (
+          <>
+            <MagnifyingGlass size={20} className="mr-2" />
+            {t('search.searchHotels', language)}
+          </>
+        )}
       </Button>
+      {error && <p className="mt-3 text-sm text-destructive">{t('search.errorMessage', language)}</p>}
     </Card>
   )
 }
 
-export function Hero({ onSearch }: { onSearch: () => void }) {
+export function Hero({ onSearch, onResultsFound }: { onSearch: () => void; onResultsFound: (hotels: Hotel[]) => void }) {
   const { language } = useApp()
 
   return (
@@ -327,7 +356,7 @@ export function Hero({ onSearch }: { onSearch: () => void }) {
         </div>
 
         <div className="max-w-5xl mx-auto">
-          <SearchWidget onSearch={onSearch} />
+          <SearchWidget onSearch={onSearch} onResultsFound={onResultsFound} />
         </div>
       </div>
     </section>

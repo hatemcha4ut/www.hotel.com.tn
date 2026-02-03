@@ -18,9 +18,10 @@ interface SearchResultsPageProps {
   onViewHotel: (hotelId: string) => void
   onBack: () => void
   onNewSearch?: () => void
+  initialResults?: Hotel[]
 }
 
-export function SearchResultsPage({ onViewHotel, onBack, onNewSearch }: SearchResultsPageProps) {
+export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialResults }: SearchResultsPageProps) {
   const { searchParams } = useApp()
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [filteredHotels, setFilteredHotels] = useState<Hotel[]>([])
@@ -31,6 +32,15 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch }: SearchRe
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
+    if (initialResults) {
+      setHotels(initialResults)
+      setFilteredHotels(initialResults)
+      setPriceRange([0, 500])
+      setSelectedStars([])
+      setLoading(false)
+      return
+    }
+
     const loadHotels = async () => {
       setLoading(true)
       try {
@@ -51,7 +61,7 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch }: SearchRe
       }
     }
     loadHotels()
-  }, [searchParams])
+  }, [searchParams, initialResults])
 
   useEffect(() => {
     let filtered = [...hotels]
