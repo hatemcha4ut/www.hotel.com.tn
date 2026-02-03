@@ -15,7 +15,7 @@ interface CityAutocompleteProps {
   className?: string
 }
 
-const normalizeValue = (value: string) =>
+const normalizeValue = (value: string | null | undefined) =>
   (value ?? '')
     .toLowerCase()
     .trim()
@@ -33,7 +33,7 @@ export function CityAutocomplete({
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const listboxId = useId()
-  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const blurTimeoutRef = useRef<number | null>(null)
   const highlightedCityIdRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export function CityAutocomplete({
   }, [filteredCities, isOpen])
 
   useEffect(() => {
-    if (isOpen && blurTimeoutRef.current) {
+    if (isOpen && blurTimeoutRef.current !== null) {
       window.clearTimeout(blurTimeoutRef.current)
       blurTimeoutRef.current = null
     }
@@ -101,7 +101,7 @@ export function CityAutocomplete({
 
   useEffect(() => {
     return () => {
-      if (blurTimeoutRef.current) {
+      if (blurTimeoutRef.current !== null) {
         window.clearTimeout(blurTimeoutRef.current)
       }
     }
@@ -118,7 +118,7 @@ export function CityAutocomplete({
         }}
         onFocus={() => setIsOpen(true)}
         onBlur={() => {
-          if (blurTimeoutRef.current) {
+          if (blurTimeoutRef.current !== null) {
             window.clearTimeout(blurTimeoutRef.current)
           }
           blurTimeoutRef.current = window.setTimeout(() => setIsOpen(false), BLUR_DELAY_MS)
