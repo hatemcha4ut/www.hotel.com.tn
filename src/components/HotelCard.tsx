@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MapPin } from '@phosphor-icons/react'
+import { MapPin, Star } from '@phosphor-icons/react'
 import type { Hotel, MyGoHotel } from '@/types'
 import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
@@ -15,8 +15,12 @@ const fallbackImage =
 
 export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
   const { language } = useApp()
-  const isMyGoHotel = (value: Hotel | MyGoHotel): value is MyGoHotel =>
-    value.type === 'mygo' || 'Name' in value
+  const isMyGoHotel = (value: Hotel | MyGoHotel): value is MyGoHotel => {
+    if (value.type) {
+      return value.type === 'mygo'
+    }
+    return 'Name' in value
+  }
   const name = isMyGoHotel(hotel) ? hotel.Name : hotel.name
   const address = isMyGoHotel(hotel) ? hotel.Address : hotel.address || hotel.city
   const stars = Math.max(
@@ -51,16 +55,15 @@ export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
-          <span className="sr-only">{`${stars} sur 5 étoiles`}</span>
+        <div className="flex items-center gap-1" role="img" aria-label={`${stars} sur 5 étoiles`}>
           {Array.from({ length: 5 }).map((_, index) => (
-            <span
+            <Star
               key={index}
+              size={16}
+              weight={index < stars ? 'fill' : 'regular'}
               className={index < stars ? 'text-yellow-400' : 'text-muted-foreground/40'}
               aria-hidden="true"
-            >
-              ⭐
-            </span>
+            />
           ))}
         </div>
 
