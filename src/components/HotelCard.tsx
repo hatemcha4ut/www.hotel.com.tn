@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -7,7 +6,10 @@ import { Hotel } from '@/types'
 import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
 
-const IMAGE_BASE_URL = 'https://admin.mygo.co'
+const IMAGE_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'https://admin.mygo.co').replace(
+  /\/$/,
+  ''
+)
 const PLACEHOLDER_IMAGE =
   'https://images.unsplash.com/photo-1501117716987-c8e1ecb210b1?w=800&h=600&fit=crop'
 
@@ -39,11 +41,7 @@ interface HotelCardProps {
 
 export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
   const { language } = useApp()
-  const [imageSrc, setImageSrc] = useState(() => resolveImageSrc(hotel.image))
-
-  useEffect(() => {
-    setImageSrc(resolveImageSrc(hotel.image))
-  }, [hotel.image])
+  const imageSrc = resolveImageSrc(hotel.image)
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
@@ -53,7 +51,10 @@ export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
           alt={hotel.name}
           className="w-full h-full object-cover"
           loading="lazy"
-          onError={() => setImageSrc(PLACEHOLDER_IMAGE)}
+          onError={(event) => {
+            event.currentTarget.onerror = null
+            event.currentTarget.src = PLACEHOLDER_IMAGE
+          }}
         />
         {hotel.promotion && (
           <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground flex items-center gap-1">
