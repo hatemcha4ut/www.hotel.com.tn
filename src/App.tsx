@@ -25,11 +25,24 @@ function App() {
   const [selectedRooms, setSelectedRooms] = useState<Room[]>([])
   const [bookingReference, setBookingReference] = useState<string>('')
 
+  // Helper function to check if hash is for admin page
+  const isAdminHash = (hash: string) => {
+    return hash === '#/admin' || hash === '#admin'
+  }
+
   // Helper function to sync page state with URL hash
   const syncPageWithHash = () => {
     const hash = window.location.hash
-    if (hash === '#/admin' || hash === '#admin') {
+    if (isAdminHash(hash)) {
       setCurrentPage('admin')
+    } else {
+      // If hash is cleared/changed to non-admin, update accordingly
+      setCurrentPage((prevPage) => {
+        if (prevPage === 'admin' && !isAdminHash(hash)) {
+          return 'home'
+        }
+        return prevPage
+      })
     }
   }
 
@@ -103,7 +116,7 @@ function App() {
     } else {
       // When navigating away from admin, clear the hash if it's currently admin
       const currentHash = window.location.hash
-      if (currentHash === '#/admin' || currentHash === '#admin') {
+      if (isAdminHash(currentHash)) {
         window.location.hash = ''
       }
     }
