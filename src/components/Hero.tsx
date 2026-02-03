@@ -1,18 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { DateRangePicker } from '@/components/DateRangePicker'
+import { CityAutocomplete } from '@/components/CityAutocomplete'
 import { MagnifyingGlass, Users, Minus, Plus, X } from '@phosphor-icons/react'
 import { format } from 'date-fns'
 import { useApp } from '@/contexts/AppContext'
 import { t } from '@/lib/translations'
-import { api } from '@/lib/api'
-import { City, Hotel } from '@/types'
+import { Hotel } from '@/types'
 import { apiClient } from '@/services/apiClient'
 
 interface SearchWidgetProps {
@@ -22,13 +21,8 @@ interface SearchWidgetProps {
 
 export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
   const { language, searchParams, setSearchParams } = useApp()
-  const [cities, setCities] = useState<City[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(false)
-
-  useEffect(() => {
-    api.getCities().then(setCities)
-  }, [])
 
   const handleAdultsChange = (roomIndex: number, delta: number) => {
     const newRooms = [...searchParams.rooms]
@@ -148,21 +142,11 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
         {searchParams.searchMode === 'city' ? (
           <div className="space-y-2">
             <Label>{t('search.selectCity', language)}</Label>
-            <Select
-              value={searchParams.cityId}
-              onValueChange={(value) => setSearchParams({ ...searchParams, cityId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('search.selectCity', language)} />
-              </SelectTrigger>
-              <SelectContent>
-                {cities.map((city) => (
-                  <SelectItem key={city.id} value={city.id}>
-                    {city.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CityAutocomplete
+              selectedCityId={searchParams.cityId}
+              placeholder={t('search.selectCity', language)}
+              onSelect={(value) => setSearchParams({ ...searchParams, cityId: value })}
+            />
           </div>
         ) : (
           <div className="space-y-2">
