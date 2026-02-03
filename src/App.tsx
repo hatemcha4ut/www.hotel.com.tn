@@ -27,7 +27,8 @@ function App() {
 
   // Helper function to check if hash is for admin page
   const isAdminHash = useCallback((hash: string) => {
-    return hash === '#/admin' || hash === '#admin'
+    const lowerHash = hash.toLowerCase()
+    return lowerHash === '#/admin' || lowerHash === '#/admin/' || lowerHash === '#admin'
   }, [])
 
   // Helper function to sync page state with URL hash
