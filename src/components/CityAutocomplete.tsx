@@ -5,7 +5,7 @@ import { tunisianCities } from '@/constants/cities'
 import { cn } from '@/lib/utils'
 
 // Allow click events to fire before closing the dropdown.
-const BLUR_DELAY_MS: number = 100
+const BLUR_DELAY_MS = 100
 
 interface CityAutocompleteProps {
   onSelect: (cityId: string) => void
@@ -15,7 +15,7 @@ interface CityAutocompleteProps {
   className?: string
 }
 
-const normalizeValue = (value: string | null | undefined) =>
+const normalizeForSearch = (value: string | null | undefined) =>
   (value ?? '')
     .toLowerCase()
     .trim()
@@ -48,11 +48,11 @@ export function CityAutocomplete({
   }, [cities, selectedCityId])
 
   const filteredCities = useMemo(() => {
-    const normalizedQuery = normalizeValue(query)
+    const normalizedQuery = normalizeForSearch(query)
     if (!normalizedQuery) {
       return cities
     }
-    return cities.filter((city) => normalizeValue(city.name).includes(normalizedQuery))
+    return cities.filter((city) => normalizeForSearch(city.name).includes(normalizedQuery))
   }, [cities, query])
 
   const listId = `${listboxId}-listbox`
