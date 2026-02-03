@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -6,6 +7,31 @@ import { Hotel } from '@/types'
 import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
 
+const IMAGE_BASE_URL = 'https://admin.mygo.co'
+const PLACEHOLDER_IMAGE =
+  'https://images.unsplash.com/photo-1501117716987-c8e1ecb210b1?w=800&h=600&fit=crop'
+
+const resolveImageSrc = (image: string | undefined) => {
+  const trimmed = image?.trim()
+  if (!trimmed) {
+    return PLACEHOLDER_IMAGE
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed
+  }
+
+  if (trimmed.startsWith('//')) {
+    return `https:${trimmed}`
+  }
+
+  if (trimmed.startsWith('/')) {
+    return `${IMAGE_BASE_URL}${trimmed}`
+  }
+
+  return `${IMAGE_BASE_URL}/${trimmed}`
+}
+
 interface HotelCardProps {
   hotel: Hotel
   onViewDetails: (hotelId: string) => void
@@ -13,15 +39,21 @@ interface HotelCardProps {
 
 export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
   const { language } = useApp()
+  const [imageSrc, setImageSrc] = useState(() => resolveImageSrc(hotel.image))
+
+  useEffect(() => {
+    setImageSrc(resolveImageSrc(hotel.image))
+  }, [hotel.image])
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
       <div className="relative h-48 overflow-hidden">
         <img
-          src={hotel.image}
+          src={imageSrc}
           alt={hotel.name}
           className="w-full h-full object-cover"
           loading="lazy"
+          onError={() => setImageSrc(PLACEHOLDER_IMAGE)}
         />
         {hotel.promotion && (
           <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground flex items-center gap-1">
