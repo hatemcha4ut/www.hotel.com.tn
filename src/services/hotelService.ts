@@ -61,6 +61,15 @@ export interface HotelSearchResponse {
   HotelSearch?: HotelSearchResult[];
 }
 
+export interface BookingListItem {
+  id: string;
+  date: string;
+  client: string;
+  hotel: string;
+  amount: string;
+  status: string;
+}
+
 /**
  * Search for hotels using the MyGo Hotel API
  * @param params - Search parameters including dates, city, and room configuration
@@ -123,4 +132,41 @@ export async function searchHotels(params: SearchParams): Promise<HotelSearchRes
   }
 }
 
-export default { searchHotels };
+export async function getBookingList(): Promise<BookingListItem[]> {
+  return [
+    {
+      id: '1',
+      date: '02/02/2026',
+      client: 'Amira Ben Ali',
+      hotel: 'Hôtel La Badira',
+      amount: '820 TND',
+      status: 'Confirmé',
+    },
+    {
+      id: '2',
+      date: '01/02/2026',
+      client: 'Youssef Mansour',
+      hotel: 'Mövenpick Resort & Marine Spa',
+      amount: '1 120 TND',
+      status: 'En attente',
+    },
+    {
+      id: '3',
+      date: '31/01/2026',
+      client: 'Sarra Mejri',
+      hotel: 'The Residence Tunis',
+      amount: '1 540 TND',
+      status: 'Confirmé',
+    },
+    {
+      id: '4',
+      date: '30/01/2026',
+      client: 'Karim Bessa',
+      hotel: 'Radisson Blu Palace Resort',
+      amount: '980 TND',
+      status: 'Annulé',
+    },
+  ];
+}
+
+export default { searchHotels, getBookingList };

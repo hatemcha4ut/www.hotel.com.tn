@@ -64,6 +64,15 @@ export function Footer({ onNavigate }: FooterProps) {
                   Politique de Confidentialité
                 </a>
               </li>
+              <li>
+                <a 
+                  href="#admin" 
+                  className="hover:text-background transition-colors cursor-pointer"
+                  onClick={(e) => handleClick(e, 'admin')}
+                >
+                  Administration
+                </a>
+              </li>
             </ul>
           </div>
 

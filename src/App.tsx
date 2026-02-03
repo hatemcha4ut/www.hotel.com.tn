@@ -11,9 +11,10 @@ import { ConfirmationPage } from '@/pages/ConfirmationPage'
 import { ContactPage } from '@/pages/ContactPage'
 import { TermsPage } from '@/pages/TermsPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
+import { AdminDashboard } from '@/pages/AdminDashboard'
 import { Hotel, Room } from '@/types'
 
-type Page = 'home' | 'search' | 'hotel' | 'booking' | 'confirmation' | 'contact' | 'terms' | 'privacy'
+type Page = 'home' | 'search' | 'hotel' | 'booking' | 'confirmation' | 'contact' | 'terms' | 'privacy' | 'admin'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home')
@@ -149,6 +150,8 @@ function App() {
           {currentPage === 'terms' && <TermsPage />}
           
           {currentPage === 'privacy' && <PrivacyPage />}
+
+          {currentPage === 'admin' && <AdminDashboard />}
         </main>
         
         {currentPage !== 'confirmation' && <Footer onNavigate={handleNavigateToPage} />}
