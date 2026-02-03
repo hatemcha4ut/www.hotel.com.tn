@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Toaster } from 'sonner'
 import { AppProvider } from '@/contexts/AppContext'
 import { Navbar } from '@/components/Navbar'
@@ -24,6 +24,44 @@ function App() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [selectedRooms, setSelectedRooms] = useState<Room[]>([])
   const [bookingReference, setBookingReference] = useState<string>('')
+
+  // Helper function to check if hash is for admin page
+  const isAdminHash = useCallback((hash: string) => {
+    return hash === '#/admin' || hash === '#admin'
+  }, [])
+
+  // Helper function to sync page state with URL hash
+  const syncPageWithHash = useCallback(() => {
+    const hash = window.location.hash
+    if (isAdminHash(hash)) {
+      setCurrentPage('admin')
+    } else {
+      // If hash is cleared/changed to non-admin, update accordingly
+      setCurrentPage((prevPage) => {
+        if (prevPage === 'admin' && !isAdminHash(hash)) {
+          return 'home'
+        }
+        return prevPage
+      })
+    }
+  }, [isAdminHash])
+
+  // Set up hash-based navigation on mount and listen for hash changes
+  useEffect(() => {
+    // Sync on initial load
+    syncPageWithHash()
+
+    // Listen for hash changes
+    const handleHashChange = () => {
+      syncPageWithHash()
+    }
+    window.addEventListener('hashchange', handleHashChange)
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange)
+    }
+  }, [syncPageWithHash])
 
   const handleSearch = () => {
     setCurrentPage('search')
@@ -72,7 +110,19 @@ function App() {
   }
 
   const handleNavigateToPage = (page: string) => {
-    setCurrentPage(page as Page)
+    if (page === 'admin') {
+      // When navigating to admin, set the hash (hashchange event will update state)
+      window.location.hash = '/admin'
+    } else {
+      // When navigating away from admin, clear the hash and set state directly
+      const currentHash = window.location.hash
+      if (isAdminHash(currentHash)) {
+        // Clear the hash first
+        window.location.hash = ''
+      }
+      // Always set the page state for non-admin pages
+      setCurrentPage(page as Page)
+    }
   }
 
   return (
