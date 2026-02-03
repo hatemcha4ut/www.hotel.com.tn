@@ -87,26 +87,63 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
     }
   }
 
-  const handleSearch = async () => {
+  const handleSearch = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    // Prevent default form submission if triggered from form
+    if (e) {
+      e.preventDefault()
+    }
+    
+    console.log('[Search] Click handler entry')
+    
+    // Validation
     if (searchParams.searchMode === 'city' && !searchParams.cityId) {
+      console.log('[Search] Validation failed: cityId required')
       return
     }
     if (searchParams.searchMode === 'hotel' && (!searchParams.hotelName || searchParams.hotelName.trim() === '')) {
+      console.log('[Search] Validation failed: hotelName required')
       return
     }
+    
+    // Prevent double clicks
+    if (isLoading) {
+      console.log('[Search] Already loading, ignoring click')
+      return
+    }
+    
     setIsLoading(true)
     setError(false)
+    
+    const searchPayload = {
+      cityId: searchParams.cityId,
+      hotelName: searchParams.hotelName,
+      checkIn: searchParams.checkIn ? format(searchParams.checkIn, 'yyyy-MM-dd') : undefined,
+      checkOut: searchParams.checkOut ? format(searchParams.checkOut, 'yyyy-MM-dd') : undefined,
+    }
+    
+    console.log('[Search] Search params:', searchPayload)
+    console.log('[Search] Request start')
+    
     try {
-      const results = await apiClient.searchHotels({
-        cityId: searchParams.cityId,
-        hotelName: searchParams.hotelName,
-        checkIn: searchParams.checkIn ? format(searchParams.checkIn, 'yyyy-MM-dd') : undefined,
-        checkOut: searchParams.checkOut ? format(searchParams.checkOut, 'yyyy-MM-dd') : undefined,
-      })
+      const results = await apiClient.searchHotels(searchPayload)
+      console.log('[Search] Request end - Results count:', results.length)
       onResultsFound(results)
       onSearch()
-    } catch (err) {
-      console.error('Error searching hotels:', err)
+    } catch (err: any) {
+      console.error('[Search] Error:', err)
+      
+      // Detect CORS errors
+      const errorMessage = err?.message || String(err)
+      const isCorsError = 
+        errorMessage.includes('CORS') || 
+        errorMessage.includes('Access-Control-Allow-Origin') ||
+        err?.name === 'NetworkError' ||
+        (err?.response === undefined && err?.request !== undefined)
+      
+      if (isCorsError) {
+        console.log('[Search] CORS blocked: use server proxy')
+      }
+      
       setError(true)
     } finally {
       setIsLoading(false)
@@ -304,7 +341,13 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
         </div>
       </div>
 
-      <Button size="lg" className="w-full mt-6" onClick={handleSearch} disabled={isLoading}>
+      <Button 
+        size="lg" 
+        className="w-full mt-6" 
+        onClick={handleSearch} 
+        disabled={isLoading}
+        type="button"
+      >
         {isLoading ? (
           <>
             <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
@@ -317,7 +360,16 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
           </>
         )}
       </Button>
-      {error && <p className="mt-3 text-sm text-destructive">{t('search.errorMessage', language)}</p>}
+      {error && (
+        <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+          <p className="text-sm text-destructive font-medium">
+            {t('search.errorMessage', language)}
+          </p>
+          <p className="text-xs text-destructive/80 mt-1">
+            CORS blocked: use server proxy
+          </p>
+        </div>
+      )}
     </Card>
   )
 }
