@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { City } from '@/types'
 import { cn } from '@/lib/utils'
+
+const BLUR_DELAY_MS = 100
 
 const tunisianCities: City[] = [
   { id: '1', name: 'Tunis', country: 'Tunisia' },
@@ -17,6 +19,7 @@ const tunisianCities: City[] = [
 interface CityAutocompleteProps {
   onSelect: (cityId: string) => void
   selectedCityId?: string
+  placeholder?: string
   className?: string
 }
 
@@ -27,9 +30,15 @@ const normalizeValue = (value: string) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
 
-export function CityAutocomplete({ onSelect, selectedCityId, className }: CityAutocompleteProps) {
+export function CityAutocomplete({
+  onSelect,
+  selectedCityId,
+  placeholder = 'Où allez-vous ?',
+  className,
+}: CityAutocompleteProps) {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const listboxId = useId()
 
   useEffect(() => {
     if (!selectedCityId) {
@@ -50,6 +59,10 @@ export function CityAutocomplete({ onSelect, selectedCityId, className }: CityAu
     return tunisianCities.filter((city) => normalizeValue(city.name).includes(normalizedQuery))
   }, [query])
 
+  const listId = `${listboxId}-listbox`
+  const activeCityId = filteredCities[0]?.id
+  const activeOptionId = activeCityId ? `${listboxId}-option-${activeCityId}` : undefined
+
   const handleSelect = (city: City) => {
     setQuery(city.name)
     setIsOpen(false)
@@ -59,7 +72,7 @@ export function CityAutocomplete({ onSelect, selectedCityId, className }: CityAu
   return (
     <div className={cn('relative', className)}>
       <Input
-        placeholder="Où allez-vous ?"
+        placeholder={placeholder}
         value={query}
         onChange={(event) => {
           setQuery(event.target.value)
@@ -67,16 +80,25 @@ export function CityAutocomplete({ onSelect, selectedCityId, className }: CityAu
         }}
         onFocus={() => setIsOpen(true)}
         onBlur={() => {
-          window.setTimeout(() => setIsOpen(false), 100)
+          window.setTimeout(() => setIsOpen(false), BLUR_DELAY_MS)
         }}
+        role="combobox"
         aria-autocomplete="list"
         aria-expanded={isOpen}
+        aria-controls={listId}
+        aria-activedescendant={activeOptionId}
       />
       {isOpen && filteredCities.length > 0 && (
-        <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover py-1 text-sm shadow-lg">
+        <ul
+          id={listId}
+          role="listbox"
+          className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover py-1 text-sm shadow-lg"
+        >
           {filteredCities.map((city) => (
             <li
               key={city.id}
+              id={`${listboxId}-option-${city.id}`}
+              role="option"
               className="cursor-pointer px-3 py-2 text-foreground hover:bg-accent hover:text-accent-foreground"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => handleSelect(city)}
