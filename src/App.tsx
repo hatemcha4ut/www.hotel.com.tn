@@ -19,6 +19,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [selectedHotelId, setSelectedHotelId] = useState<string>('')
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null)
+  const [searchResults, setSearchResults] = useState<Hotel[] | null>(null)
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [selectedRooms, setSelectedRooms] = useState<Room[]>([])
   const [bookingReference, setBookingReference] = useState<string>('')
@@ -58,6 +59,7 @@ function App() {
     setSelectedRoom(null)
     setSelectedRooms([])
     setBookingReference('')
+    setSearchResults(null)
   }
 
   const handleBackToHome = () => {
@@ -79,7 +81,7 @@ function App() {
         
         <main className="flex-1">
           {currentPage === 'home' && (
-            <HomePage onSearch={handleSearch} onViewHotel={handleViewHotel} />
+            <HomePage onSearch={handleSearch} onViewHotel={handleViewHotel} onResultsFound={setSearchResults} />
           )}
           
           {currentPage === 'search' && (
@@ -87,6 +89,7 @@ function App() {
               onViewHotel={handleViewHotel}
               onBack={handleBackToHome}
               onNewSearch={handleNewSearch}
+              initialResults={searchResults ?? undefined}
             />
           )}
           

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Hotel } from '@/types'
 import { api } from '@/lib/api'
-import { HotelCard } from '@/components/HotelCard'
+import { ResultsList } from '@/components/ResultsList'
 import { Tag } from '@phosphor-icons/react'
 import { useApp } from '@/contexts/AppContext'
 
@@ -83,11 +83,7 @@ export function DealsSection({ onViewHotel }: DealsSectionProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {deals.map((hotel) => (
-            <HotelCard key={hotel.id} hotel={hotel} onViewDetails={onViewHotel} />
-          ))}
-        </div>
+         <ResultsList hotels={deals} onViewHotel={onViewHotel} />
       </div>
     </section>
   )

@@ -1,4 +1,5 @@
 export interface Hotel {
+  type?: 'hotel'
   id: string
   name: string
   city: string
@@ -22,6 +23,17 @@ export interface Hotel {
     validUntil: string
     originalPrice: number
   }
+}
+
+export interface MyGoHotel {
+  type?: 'mygo'
+  id?: string | number
+  Id?: string | number
+  Name: string
+  Category: number
+  Address: string
+  MainPhoto: string
+  MinPrice: number
 }
 
 export interface City {

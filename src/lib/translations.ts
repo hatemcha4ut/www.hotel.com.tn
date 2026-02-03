@@ -26,11 +26,14 @@ type TranslationKey =
   | 'search.addRoom'
   | 'search.removeRoom'
   | 'search.searchHotels'
+  | 'search.errorMessage'
   | 'common.from'
   | 'common.perNight'
   | 'common.viewDetails'
+  | 'common.viewAvailability'
   | 'common.loading'
   | 'common.currency'
+  | 'common.starsRating'
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
   fr: {
@@ -59,11 +62,14 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.addRoom': 'Ajouter une chambre',
     'search.removeRoom': 'Supprimer',
     'search.searchHotels': 'Rechercher',
+    'search.errorMessage': 'Une erreur est survenue. Veuillez réessayer.',
     'common.from': 'À partir de',
     'common.perNight': 'par nuit',
     'common.viewDetails': 'Voir les détails',
+    'common.viewAvailability': 'Voir Disponibilité',
     'common.loading': 'Chargement...',
     'common.currency': 'TND',
+    'common.starsRating': '{stars} sur 5 étoiles',
   },
   en: {
     'nav.hotels': 'Hotels',
@@ -91,11 +97,14 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.addRoom': 'Add room',
     'search.removeRoom': 'Remove',
     'search.searchHotels': 'Search',
+    'search.errorMessage': 'Something went wrong. Please try again.',
     'common.from': 'From',
     'common.perNight': 'per night',
     'common.viewDetails': 'View Details',
+    'common.viewAvailability': 'View Availability',
     'common.loading': 'Loading...',
     'common.currency': 'TND',
+    'common.starsRating': '{stars} out of 5 stars',
   },
   ar: {
     'nav.hotels': 'الفنادق',
@@ -123,11 +132,14 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.addRoom': 'إضافة غرفة',
     'search.removeRoom': 'حذف',
     'search.searchHotels': 'بحث',
+    'search.errorMessage': 'حدث خطأ. يرجى المحاولة مرة أخرى.',
     'common.from': 'ابتداءً من',
     'common.perNight': 'لكل ليلة',
     'common.viewDetails': 'عرض التفاصيل',
+    'common.viewAvailability': 'عرض التوفر',
     'common.loading': 'جاري التحميل...',
     'common.currency': 'دينار',
+    'common.starsRating': '{stars} من 5 نجوم',
   },
 }
 

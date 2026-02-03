@@ -1,12 +1,17 @@
 import { useCallback, useMemo } from 'react'
 import type { SyntheticEvent } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Star, MapPin, Tag } from '@phosphor-icons/react'
-import { Hotel } from '@/types'
+import { MapPin, Star } from '@phosphor-icons/react'
+import type { Hotel, MyGoHotel } from '@/types'
 import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
+import {
+  getMyGoHotelIdentifier,
+  HOTEL_FALLBACK_IMAGE,
+  isMyGoHotel,
+  MYGO_BASE_URL
+} from '@/lib/hotel'
 
 const PLACEHOLDER_IMAGE =
   'https://images.unsplash.com/photo-1501117716987-c8e1ecb210b1?w=800&h=600&fit=crop'
@@ -38,12 +43,16 @@ const resolveImageSrc = (image: string | undefined) => {
 }
 
 interface HotelCardProps {
-  hotel: Hotel
+  hotel: Hotel | MyGoHotel
   onViewDetails: (hotelId: string) => void
 }
 
+const MIN_STARS = 0
+const MAX_STARS = 5
+
 export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
   const { language } = useApp()
+ copilot/improve-hotelcard-image-handling
   const imageSrc = useMemo(() => resolveImageSrc(hotel.image), [hotel.image])
   const handleImageError = useCallback(
     (event: SyntheticEvent<HTMLImageElement>) => {
@@ -54,77 +63,74 @@ export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
     []
   )
 
+  const name = isMyGoHotel(hotel) ? hotel.Name : hotel.name
+  const address = isMyGoHotel(hotel) ? hotel.Address : hotel.address || hotel.city
+  const stars = Math.max(
+    MIN_STARS,
+    Math.min(MAX_STARS, Math.round(isMyGoHotel(hotel) ? hotel.Category : hotel.stars))
+  )
+  const starsLabel = t('common.starsRating', language).replace('{stars}', String(stars))
+  const imageUrl = isMyGoHotel(hotel)
+    ? hotel.MainPhoto
+      ? `${MYGO_BASE_URL}${hotel.MainPhoto}`
+      : HOTEL_FALLBACK_IMAGE
+    : hotel.image || HOTEL_FALLBACK_IMAGE
+  const price = isMyGoHotel(hotel) ? hotel.MinPrice : hotel.price
+  const hotelId = isMyGoHotel(hotel) ? getMyGoHotelIdentifier(hotel) : hotel.id
+ main
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-      <div className="relative h-48 overflow-hidden">
+    <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      <div className="relative h-52 overflow-hidden bg-muted">
         <img
+copilot/improve-hotelcard-image-handling
           src={imageSrc}
           alt={hotel.name}
           className="w-full h-full object-cover"
+          
+          src={imageUrl}
+          alt={name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+ main
           loading="lazy"
           onError={handleImageError}
         />
-        {hotel.promotion && (
-          <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground flex items-center gap-1">
-            <Tag size={14} weight="fill" />
-            -{hotel.promotion.discount}%
-          </Badge>
-        )}
-        <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground">
-          <Star size={14} weight="fill" className="mr-1" />
-          {hotel.stars} étoiles
-        </Badge>
       </div>
       
-      <CardContent className="p-4">
-        <div className="mb-2">
-          <h3 className="text-xl font-semibold mb-1 line-clamp-1">{hotel.name}</h3>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+      <CardContent className="p-5 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground line-clamp-2">{name}</h3>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
             <MapPin size={14} weight="fill" />
-            <span>{hotel.city}</span>
+            <span className="line-clamp-1">{address}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex items-center gap-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                size={14}
-                weight={i < Math.floor(hotel.rating) ? 'fill' : 'regular'}
-                className="text-accent"
-              />
-            ))}
-          </div>
-          <span className="text-sm font-medium">{hotel.rating}</span>
-          <span className="text-sm text-muted-foreground">({hotel.reviewCount} avis)</span>
+        <div className="flex items-center gap-1" role="img" aria-label={starsLabel}>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Star
+              key={index}
+              size={16}
+              weight={index < stars ? 'fill' : 'regular'}
+              className={index < stars ? 'text-yellow-400' : 'text-muted-foreground/40'}
+              aria-hidden="true"
+            />
+          ))}
         </div>
-
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {hotel.description}
-        </p>
 
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <div>
             <div className="text-sm text-muted-foreground">{t('common.from', language)}</div>
-            {hotel.promotion ? (
-              <div>
-                <div className="text-sm line-through text-muted-foreground">
-                  {hotel.promotion.originalPrice} {t('common.currency', language)}
-                </div>
-                <div className="text-2xl font-bold text-destructive">
-                  {hotel.price} <span className="text-sm font-normal">{t('common.currency', language)}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-2xl font-bold text-primary">
-                {hotel.price} <span className="text-sm font-normal">{t('common.currency', language)}</span>
-              </div>
-            )}
+            <div className="text-2xl font-bold text-primary">
+              {price}{' '}
+              <span className="text-sm font-normal text-muted-foreground">
+                {t('common.currency', language)}
+              </span>
+            </div>
             <div className="text-xs text-muted-foreground">{t('common.perNight', language)}</div>
           </div>
-          <Button onClick={() => onViewDetails(hotel.id)}>
-            {t('common.viewDetails', language)}
+          <Button onClick={() => onViewDetails(hotelId)}>
+            {t('common.viewAvailability', language)}
           </Button>
         </div>
       </CardContent>
