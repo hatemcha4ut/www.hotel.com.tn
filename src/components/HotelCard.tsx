@@ -1,3 +1,5 @@
+import { useCallback, useMemo } from 'react'
+import type { SyntheticEvent } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MapPin, Star } from '@phosphor-icons/react'
@@ -11,6 +13,35 @@ import {
   MYGO_BASE_URL
 } from '@/lib/hotel'
 
+const PLACEHOLDER_IMAGE =
+  'https://images.unsplash.com/photo-1501117716987-c8e1ecb210b1?w=800&h=600&fit=crop'
+
+const IMAGE_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'https://admin.mygo.co').replace(
+  /\/$/,
+  ''
+)
+
+const resolveImageSrc = (image: string | undefined) => {
+  const trimmed = image?.trim()
+  if (!trimmed) {
+    return PLACEHOLDER_IMAGE
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed
+  }
+
+  if (trimmed.startsWith('//')) {
+    return `https:${trimmed}`
+  }
+
+  if (trimmed.startsWith('/')) {
+    return `${IMAGE_BASE_URL}${trimmed}`
+  }
+
+  return `${IMAGE_BASE_URL}/${trimmed}`
+}
+
 interface HotelCardProps {
   hotel: Hotel | MyGoHotel
   onViewDetails: (hotelId: string) => void
@@ -21,6 +52,17 @@ const MAX_STARS = 5
 
 export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
   const { language } = useApp()
+ copilot/improve-hotelcard-image-handling
+  const imageSrc = useMemo(() => resolveImageSrc(hotel.image), [hotel.image])
+  const handleImageError = useCallback(
+    (event: SyntheticEvent<HTMLImageElement>) => {
+      event.currentTarget.onerror = null
+      event.currentTarget.src = PLACEHOLDER_IMAGE
+      event.currentTarget.alt = `${event.currentTarget.alt} (placeholder)`
+    },
+    []
+  )
+
   const name = isMyGoHotel(hotel) ? hotel.Name : hotel.name
   const address = isMyGoHotel(hotel) ? hotel.Address : hotel.address || hotel.city
   const stars = Math.max(
@@ -35,15 +77,23 @@ export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
     : hotel.image || HOTEL_FALLBACK_IMAGE
   const price = isMyGoHotel(hotel) ? hotel.MinPrice : hotel.price
   const hotelId = isMyGoHotel(hotel) ? getMyGoHotelIdentifier(hotel) : hotel.id
+ main
 
   return (
     <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       <div className="relative h-52 overflow-hidden bg-muted">
         <img
+copilot/improve-hotelcard-image-handling
+          src={imageSrc}
+          alt={hotel.name}
+          className="w-full h-full object-cover"
+          
           src={imageUrl}
           alt={name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+ main
           loading="lazy"
+          onError={handleImageError}
         />
       </div>
       
