@@ -1,89 +1,80 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Star, MapPin, Tag } from '@phosphor-icons/react'
-import { Hotel } from '@/types'
+import { MapPin } from '@phosphor-icons/react'
+import type { Hotel, MyGoHotel } from '@/types'
 import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
 
 interface HotelCardProps {
-  hotel: Hotel
+  hotel: Hotel | MyGoHotel
   onViewDetails: (hotelId: string) => void
 }
 
+const fallbackImage =
+  'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop'
+
 export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
   const { language } = useApp()
+  const isMyGoHotel = (value: Hotel | MyGoHotel): value is MyGoHotel => 'Name' in value
+  const name = isMyGoHotel(hotel) ? hotel.Name : hotel.name
+  const address = isMyGoHotel(hotel) ? hotel.Address : hotel.address || hotel.city
+  const stars = Math.max(
+    0,
+    Math.min(5, Math.round(isMyGoHotel(hotel) ? hotel.Category : hotel.stars))
+  )
+  const imageUrl = isMyGoHotel(hotel)
+    ? hotel.MainPhoto
+      ? `https://admin.mygo.co${hotel.MainPhoto}`
+      : fallbackImage
+    : hotel.image || fallbackImage
+  const price = isMyGoHotel(hotel) ? hotel.MinPrice : hotel.price
+  const hotelId = isMyGoHotel(hotel) ? hotel.Name : hotel.id
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-      <div className="relative h-48 overflow-hidden">
+    <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      <div className="relative h-52 overflow-hidden bg-muted">
         <img
-          src={hotel.image}
-          alt={hotel.name}
-          className="w-full h-full object-cover"
+          src={imageUrl}
+          alt={name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        {hotel.promotion && (
-          <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground flex items-center gap-1">
-            <Tag size={14} weight="fill" />
-            -{hotel.promotion.discount}%
-          </Badge>
-        )}
-        <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground">
-          <Star size={14} weight="fill" className="mr-1" />
-          {hotel.stars} étoiles
-        </Badge>
       </div>
       
-      <CardContent className="p-4">
-        <div className="mb-2">
-          <h3 className="text-xl font-semibold mb-1 line-clamp-1">{hotel.name}</h3>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+      <CardContent className="p-5 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground line-clamp-2">{name}</h3>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
             <MapPin size={14} weight="fill" />
-            <span>{hotel.city}</span>
+            <span className="line-clamp-1">{address}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex items-center gap-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                size={14}
-                weight={i < Math.floor(hotel.rating) ? 'fill' : 'regular'}
-                className="text-accent"
-              />
-            ))}
-          </div>
-          <span className="text-sm font-medium">{hotel.rating}</span>
-          <span className="text-sm text-muted-foreground">({hotel.reviewCount} avis)</span>
+        <div className="flex items-center gap-1">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <span
+              key={index}
+              className={index < stars ? 'text-yellow-400' : 'text-muted-foreground/40'}
+              aria-hidden="true"
+            >
+              ⭐
+            </span>
+          ))}
         </div>
-
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {hotel.description}
-        </p>
 
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <div>
             <div className="text-sm text-muted-foreground">{t('common.from', language)}</div>
-            {hotel.promotion ? (
-              <div>
-                <div className="text-sm line-through text-muted-foreground">
-                  {hotel.promotion.originalPrice} {t('common.currency', language)}
-                </div>
-                <div className="text-2xl font-bold text-destructive">
-                  {hotel.price} <span className="text-sm font-normal">{t('common.currency', language)}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-2xl font-bold text-primary">
-                {hotel.price} <span className="text-sm font-normal">{t('common.currency', language)}</span>
-              </div>
-            )}
+            <div className="text-2xl font-bold text-primary">
+              {price}{' '}
+              <span className="text-sm font-normal text-muted-foreground">
+                {t('common.currency', language)}
+              </span>
+            </div>
             <div className="text-xs text-muted-foreground">{t('common.perNight', language)}</div>
           </div>
-          <Button onClick={() => onViewDetails(hotel.id)}>
-            {t('common.viewDetails', language)}
+          <Button onClick={() => onViewDetails(hotelId)}>
+            Voir Disponibilité
           </Button>
         </div>
       </CardContent>

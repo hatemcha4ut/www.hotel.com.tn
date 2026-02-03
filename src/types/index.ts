@@ -24,6 +24,14 @@ export interface Hotel {
   }
 }
 
+export interface MyGoHotel {
+  Name: string
+  Category: number
+  Address: string
+  MainPhoto: string
+  MinPrice: number
+}
+
 export interface City {
   id: string
   name: string

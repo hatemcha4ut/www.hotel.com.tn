@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { HotelCard } from '@/components/HotelCard'
+import { ResultsList } from '@/components/ResultsList'
 import { FunnelSimple, ArrowLeft, MagnifyingGlass } from '@phosphor-icons/react'
 import { api } from '@/lib/api'
 import { Hotel, SortOption } from '@/types'
@@ -201,27 +201,23 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch }: SearchRe
           </aside>
 
           <main className="flex-1">
-            {loading ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
-                ))}
-              </div>
-            ) : filteredHotels.length === 0 ? (
-              <Card className="p-12 text-center">
-                <h3 className="text-xl font-semibold mb-2">Aucun hôtel trouvé</h3>
-                <p className="text-muted-foreground mb-6">
-                  Essayez de modifier vos critères de recherche ou de réinitialiser les filtres.
-                </p>
-                <Button onClick={onBack}>Nouvelle recherche</Button>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredHotels.map((hotel) => (
-                  <HotelCard key={hotel.id} hotel={hotel} onViewDetails={onViewHotel} />
-                ))}
-              </div>
-            )}
+             {loading ? (
+               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                 {Array.from({ length: 6 }).map((_, i) => (
+                   <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
+                 ))}
+               </div>
+             ) : filteredHotels.length === 0 ? (
+               <Card className="p-12 text-center">
+                 <h3 className="text-xl font-semibold mb-2">Aucun hôtel trouvé</h3>
+                 <p className="text-muted-foreground mb-6">
+                   Essayez de modifier vos critères de recherche ou de réinitialiser les filtres.
+                 </p>
+                 <Button onClick={onBack}>Nouvelle recherche</Button>
+               </Card>
+             ) : (
+               <ResultsList hotels={filteredHotels} onViewHotel={onViewHotel} />
+             )}
           </main>
         </div>
       </div>
