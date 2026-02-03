@@ -51,7 +51,7 @@ function App() {
     setCurrentPage('confirmation')
   }
 
-  const handleBackToHome = () => {
+  const resetSearchState = () => {
     setCurrentPage('home')
     setSelectedHotelId('')
     setSelectedHotel(null)
@@ -59,14 +59,13 @@ function App() {
     setSelectedRooms([])
     setBookingReference('')
   }
+
+  const handleBackToHome = () => {
+    resetSearchState()
+  }
   
   const handleNewSearch = () => {
-    setCurrentPage('home')
-    setSelectedHotelId('')
-    setSelectedHotel(null)
-    setSelectedRoom(null)
-    setSelectedRooms([])
-    setBookingReference('')
+    resetSearchState()
   }
 
   const handleNavigateToPage = (page: string) => {
@@ -87,6 +86,7 @@ function App() {
             <SearchResultsPage
               onViewHotel={handleViewHotel}
               onBack={handleBackToHome}
+              onNewSearch={handleNewSearch}
             />
           )}
           

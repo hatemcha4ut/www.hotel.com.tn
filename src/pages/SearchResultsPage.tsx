@@ -17,9 +17,10 @@ import { fr } from 'date-fns/locale'
 interface SearchResultsPageProps {
   onViewHotel: (hotelId: string) => void
   onBack: () => void
+  onNewSearch?: () => void
 }
 
-export function SearchResultsPage({ onViewHotel, onBack }: SearchResultsPageProps) {
+export function SearchResultsPage({ onViewHotel, onBack, onNewSearch }: SearchResultsPageProps) {
   const { searchParams } = useApp()
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [filteredHotels, setFilteredHotels] = useState<Hotel[]>([])
@@ -94,10 +95,12 @@ export function SearchResultsPage({ onViewHotel, onBack }: SearchResultsPageProp
               <ArrowLeft size={18} className="mr-2" />
               Retour
             </Button>
-            <Button variant="outline" onClick={onBack}>
-              <MagnifyingGlass size={18} className="mr-2" />
-              Nouvelle recherche
-            </Button>
+            {onNewSearch && (
+              <Button variant="outline" onClick={onNewSearch}>
+                <MagnifyingGlass size={18} className="mr-2" />
+                Nouvelle recherche
+              </Button>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
