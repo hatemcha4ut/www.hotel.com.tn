@@ -5,27 +5,35 @@ export interface ClicToPayRedirectParams {
 
 const CLIC_TO_PAY_URL =
   import.meta.env.VITE_CLIC_TO_PAY_URL ?? 'https://www.clictopay.com.tn'
-const CLIC_TO_PAY_USERNAME = import.meta.env.VITE_CLIC_TO_PAY_USERNAME
-const CLIC_TO_PAY_PASSWORD = import.meta.env.VITE_CLIC_TO_PAY_PASSWORD
+const CLIC_TO_PAY_PARAMS_ENDPOINT = import.meta.env.VITE_CLIC_TO_PAY_PARAMS_ENDPOINT
 
 export const clicToPayService = {
-  getRedirectParams(amount: number, orderId: string): ClicToPayRedirectParams {
-    if (!CLIC_TO_PAY_USERNAME || !CLIC_TO_PAY_PASSWORD) {
-      throw new Error('Identifiants ClicToPay manquants.')
+  async getRedirectParams(amount: number, orderId: string): Promise<ClicToPayRedirectParams> {
+    if (!CLIC_TO_PAY_PARAMS_ENDPOINT) {
+      throw new Error('Configuration ClicToPay manquante.')
     }
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error('Le montant doit être supérieur à zéro.')
     }
 
+    const response = await fetch(CLIC_TO_PAY_PARAMS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: amount.toFixed(3), orderId }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Impossible de générer les paramètres de paiement.')
+    }
+
+    const payload = (await response.json()) as Partial<ClicToPayRedirectParams>
+    if (!payload.actionUrl || !payload.params) {
+      throw new Error('Réponse ClicToPay invalide.')
+    }
+
     return {
-      actionUrl: CLIC_TO_PAY_URL,
-      params: {
-        userName: CLIC_TO_PAY_USERNAME,
-        password: CLIC_TO_PAY_PASSWORD,
-        amount: amount.toFixed(3),
-        orderId,
-        currency: 'TND',
-      },
+      actionUrl: payload.actionUrl ?? CLIC_TO_PAY_URL,
+      params: payload.params,
     }
   },
 }

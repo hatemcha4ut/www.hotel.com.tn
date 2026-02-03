@@ -12,18 +12,30 @@ export function ClicToPayRedirect({ amount, orderId }: ClicToPayRedirectProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    try {
-      setRedirectConfig(clicToPayService.getRedirectParams(amount, orderId))
-      setErrorMessage(null)
-    } catch (error) {
-      setRedirectConfig(null)
-      setErrorMessage(error instanceof Error ? error.message : 'Erreur lors de la redirection.')
+    let isActive = true
+    const loadParams = async () => {
+      try {
+        const config = await clicToPayService.getRedirectParams(amount, orderId)
+        if (isActive) {
+          setRedirectConfig(config)
+          setErrorMessage(null)
+        }
+      } catch (error) {
+        if (isActive) {
+          setRedirectConfig(null)
+          setErrorMessage(error instanceof Error ? error.message : 'Erreur lors de la redirection.')
+        }
+      }
+    }
+    loadParams()
+    return () => {
+      isActive = false
     }
   }, [amount, orderId])
 
   useEffect(() => {
     if (redirectConfig && formRef.current) {
-      formRef.current?.submit()
+      formRef.current.submit()
     }
   }, [redirectConfig])
 
