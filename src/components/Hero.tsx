@@ -26,24 +26,6 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(false)
   const [isCorsError, setIsCorsError] = useState(false)
-  const [showWarning, setShowWarning] = useState(false)
-
-  // Auto-dismiss warning after 4 seconds
-  useEffect(() => {
-    if (showWarning) {
-      const timer = setTimeout(() => {
-        setShowWarning(false)
-      }, 4000)
-      return () => clearTimeout(timer)
-    }
-  }, [showWarning])
-
-  // Reset warning when user selects city or types hotel name
-  useEffect(() => {
-    if (showWarning && (searchParams.cityId || searchParams.hotelName?.trim())) {
-      setShowWarning(false)
-    }
-  }, [searchParams.cityId, searchParams.hotelName, showWarning])
 
   const handleAdultsChange = (roomIndex: number, delta: number) => {
     const newRooms = [...searchParams.rooms]
@@ -122,7 +104,6 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
     
     if (!hasCity && !hasHotel) {
       console.log('[Search] blocked: missing city/hotel')
-      setShowWarning(true)
       toast.warning(t('search.validationWarning', language), {
         duration: 4000,
       })
@@ -138,7 +119,6 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
     setIsLoading(true)
     setError(false)
     setIsCorsError(false)
-    setShowWarning(false)
     
     const searchPayload = {
       cityId: searchParams.cityId,
@@ -389,13 +369,6 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
           </>
         )}
       </Button>
-      {showWarning && (
-        <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
-          <p className="text-sm text-amber-600 dark:text-amber-500 font-medium">
-            {t('search.validationWarning', language)}
-          </p>
-        </div>
-      )}
       {error && (
         <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
           <p className="text-sm text-destructive font-medium">
