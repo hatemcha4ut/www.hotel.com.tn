@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { CheckCircle, Download, Eye, Printer, Wallet } from '@phosphor-icons/react'
+import { CheckCircle, Download, Eye, Printer, Wallet, MagnifyingGlass } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -11,9 +11,10 @@ import { fr } from 'date-fns/locale'
 interface ConfirmationPageProps {
   reference: string
   onHome: () => void
+  onNewSearch?: () => void
 }
 
-export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
+export function ConfirmationPage({ reference, onHome, onNewSearch }: ConfirmationPageProps) {
   const [showVoucher, setShowVoucher] = useState(false)
   const [bookingData, setBookingData] = useState<any>(null)
 
@@ -503,9 +504,22 @@ export function ConfirmationPage({ reference, onHome }: ConfirmationPageProps) {
           </div>
 
           <div className="space-y-3">
-            <Button className="w-full" size="lg" onClick={onHome}>
-              Retour à l'accueil
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button className="w-full" size="lg" onClick={onHome}>
+                Retour à l'accueil
+              </Button>
+              {onNewSearch && (
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  size="lg"
+                  onClick={onNewSearch}
+                >
+                  <MagnifyingGlass size={18} className="mr-2" />
+                  Rechercher d'autres hôtels
+                </Button>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Button 
                 variant="outline" 

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { CheckCircle, ArrowLeft, User, UserPlus } from '@phosphor-icons/react'
+import { CheckCircle, ArrowLeft, User, UserPlus, MagnifyingGlass } from '@phosphor-icons/react'
 import { Hotel, Room, GuestDetails } from '@/types'
 import { useApp } from '@/contexts/AppContext'
 import { format } from 'date-fns'
@@ -26,9 +26,10 @@ interface BookingPageProps {
   rooms?: Room[]
   onBack: () => void
   onComplete: (reference: string) => void
+  onNewSearch?: () => void
 }
 
-export function BookingPage({ hotel, room, rooms, onBack, onComplete }: BookingPageProps) {
+export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearch }: BookingPageProps) {
   const { searchParams } = useApp()
   const bookingRooms = rooms && rooms.length > 0 ? rooms : [room]
   const [step, setStep] = useState(1)
@@ -151,10 +152,18 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete }: BookingP
     <div className="min-h-screen bg-background">
       <div className="bg-muted/30 py-4 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft size={18} className="mr-2" />
-            Retour
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={onBack}>
+              <ArrowLeft size={18} className="mr-2" />
+              Retour
+            </Button>
+            {onNewSearch && (
+              <Button variant="outline" onClick={onNewSearch}>
+                <MagnifyingGlass size={18} className="mr-2" />
+                Nouvelle recherche
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

@@ -21,6 +21,7 @@ import {
   Users,
   Calendar,
   Bed,
+  MagnifyingGlass,
 } from '@phosphor-icons/react'
 import { api } from '@/lib/api'
 import { Hotel, Room } from '@/types'
@@ -34,9 +35,10 @@ interface HotelDetailsPageProps {
   onBack: () => void
   onBookRoom: (room: Room) => void
   onBookRooms?: (rooms: Room[]) => void
+  onNewSearch?: () => void
 }
 
-export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: HotelDetailsPageProps) {
+export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms, onNewSearch }: HotelDetailsPageProps) {
   const { searchParams, setSearchParams } = useApp()
   const [hotel, setHotel] = useState<Hotel | null>(null)
   const [rooms, setRooms] = useState<Room[]>([])
@@ -277,10 +279,18 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms }: H
     <div className="min-h-screen bg-background">
       <div className="bg-muted/30 py-4 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft size={18} className="mr-2" />
-            Retour aux résultats
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={onBack}>
+              <ArrowLeft size={18} className="mr-2" />
+              Retour aux résultats
+            </Button>
+            {onNewSearch && (
+              <Button variant="outline" onClick={onNewSearch}>
+                <MagnifyingGlass size={18} className="mr-2" />
+                Nouvelle recherche
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

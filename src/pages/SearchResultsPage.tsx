@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { HotelCard } from '@/components/HotelCard'
-import { FunnelSimple, ArrowLeft } from '@phosphor-icons/react'
+import { FunnelSimple, ArrowLeft, MagnifyingGlass } from '@phosphor-icons/react'
 import { api } from '@/lib/api'
 import { Hotel, SortOption } from '@/types'
 import { useApp } from '@/contexts/AppContext'
@@ -17,9 +17,10 @@ import { fr } from 'date-fns/locale'
 interface SearchResultsPageProps {
   onViewHotel: (hotelId: string) => void
   onBack: () => void
+  onNewSearch?: () => void
 }
 
-export function SearchResultsPage({ onViewHotel, onBack }: SearchResultsPageProps) {
+export function SearchResultsPage({ onViewHotel, onBack, onNewSearch }: SearchResultsPageProps) {
   const { searchParams } = useApp()
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [filteredHotels, setFilteredHotels] = useState<Hotel[]>([])
@@ -89,10 +90,18 @@ export function SearchResultsPage({ onViewHotel, onBack }: SearchResultsPageProp
     <div className="min-h-screen bg-background">
       <div className="bg-muted/30 py-6 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Button variant="ghost" onClick={onBack} className="mb-4">
-            <ArrowLeft size={18} className="mr-2" />
-            Retour
-          </Button>
+          <div className="flex items-center gap-2 mb-4">
+            <Button variant="ghost" onClick={onBack}>
+              <ArrowLeft size={18} className="mr-2" />
+              Retour
+            </Button>
+            {onNewSearch && (
+              <Button variant="outline" onClick={onNewSearch}>
+                <MagnifyingGlass size={18} className="mr-2" />
+                Nouvelle recherche
+              </Button>
+            )}
+          </div>
           
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
