@@ -17,9 +17,9 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { AuthDialog } from '@/components/AuthDialog'
-import { useKV } from '@github/spark/hooks'
 import { getSupabaseClient } from '@/lib/supabase'
 import { createGuestBooking } from '@/services/guestBooking'
+import { useAuthUser } from '@/hooks/use-auth-user'
 
 interface BookingPageProps {
   hotel: Hotel
@@ -54,7 +54,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
-  const [currentUser, setCurrentUser] = useKV<any>('currentUser', null)
+  const { currentUser, setCurrentUser } = useAuthUser()
   const [isGuestMode, setIsGuestMode] = useState(false)
   const handleSubmit = async () => {
     setProcessing(true)

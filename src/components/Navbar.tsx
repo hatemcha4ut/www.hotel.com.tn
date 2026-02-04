@@ -5,15 +5,15 @@ import { List, User } from '@phosphor-icons/react'
 import { useApp } from '@/contexts/AppContext'
 import { t } from '@/lib/translations'
 import { AuthDialog } from '@/components/AuthDialog'
-import { useKV } from '@github/spark/hooks'
 import hotelCitiesLogo from '@/assets/images/logo hotel.com.tn.svg'
 import { getSupabaseClient } from '@/lib/supabase'
+import { useAuthUser } from '@/hooks/use-auth-user'
 
 export function Navbar() {
   const { language, setLanguage } = useApp()
   const [isOpen, setIsOpen] = useState(false)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
-  const [currentUser, setCurrentUser] = useKV<any>('currentUser', null)
+  const { currentUser, setCurrentUser } = useAuthUser()
 
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => {
     const handleClick = () => {

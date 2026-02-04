@@ -23,6 +23,24 @@ interface AuthDialogProps {
   onAuthSuccess?: (user: AuthUser) => void
 }
 
+export const buildAuthUser = (user: User): AuthUser => {
+  const metadata = (user.user_metadata ?? {}) as {
+    first_name?: string
+    last_name?: string
+    phone?: string
+    name?: string
+  }
+  const fallbackName = user.email ? user.email.split('@')[0] : ''
+  const firstName = metadata.first_name ?? ''
+  const lastName = metadata.last_name ?? ''
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    phone: user.phone ?? metadata.phone ?? '',
+    name: `${firstName} ${lastName}`.trim() || metadata.name || fallbackName,
+  }
+}
+
 export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) {
   const [verificationMethod, setVerificationMethod] = useState<'email' | 'whatsapp'>('email')
   const [step, setStep] = useState<'auth' | 'verify'>('auth')
@@ -37,27 +55,6 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
   })
   const [verificationCode, setVerificationCode] = useState('')
   const [generatedCode, setGeneratedCode] = useState('')
-
-  const buildUserPayload = (user: User | null): AuthUser => {
-    if (!user) {
-      throw new Error('Utilisateur non disponible.')
-    }
-    const metadata = (user.user_metadata ?? {}) as {
-      first_name?: string
-      last_name?: string
-      phone?: string
-      name?: string
-    }
-    const fallbackName = user.email ? user.email.split('@')[0] : ''
-    const firstName = metadata.first_name ?? ''
-    const lastName = metadata.last_name ?? ''
-    return {
-      id: user.id,
-      email: user.email ?? '',
-      phone: user.phone ?? metadata.phone ?? '',
-      name: `${firstName} ${lastName}`.trim() || metadata.name || fallbackName,
-    }
-  }
 
   const generateCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString()
@@ -78,7 +75,10 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
         throw error
       }
       toast.success('Connexion réussie!')
-      onAuthSuccess?.(buildUserPayload(data.user))
+      if (!data.user) {
+        throw new Error('Utilisateur non disponible.')
+      }
+      onAuthSuccess?.(buildAuthUser(data.user))
       onOpenChange(false)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erreur lors de la connexion')
@@ -128,7 +128,10 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
         if (error) {
           throw error
         }
-        onAuthSuccess?.(buildUserPayload(data.user))
+        if (!data.user) {
+          throw new Error('Utilisateur non disponible.')
+        }
+        onAuthSuccess?.(buildAuthUser(data.user))
         toast.success('Compte créé avec succès!')
         onOpenChange(false)
         setStep('auth')
