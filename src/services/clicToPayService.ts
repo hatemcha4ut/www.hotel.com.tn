@@ -1,4 +1,3 @@
-copilot/add-clic-to-pay-redirect-component
 export interface ClicToPayRedirectParams {
   actionUrl: string
   params: Record<string, string>
@@ -41,7 +40,8 @@ export const clicToPayService = {
       params: payload.params,
     }
   },
-  
+}
+
 export const MERCHANT_ID = process.env.REACT_APP_CTP_MERCHANT_ID ?? 'AMERICAN-TOURS'
 export const ACTION_URL =
   process.env.REACT_APP_CTP_ACTION_URL ?? 'https://test.clictopay.com.tn/payment/rest/register.do'
@@ -75,5 +75,4 @@ export const generatePaymentParams = (orderId: string, amount: number) => {
     returnUrl: RETURN_URL,
     failUrl: FAIL_URL,
   }
- main
 }
