@@ -46,7 +46,9 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
         setConfirmationToken(token)
 
         if (!token) {
-          setLoadError('Token de confirmation manquant.')
+          setLoadError(
+            'Token de confirmation manquant. Veuillez vérifier le lien reçu par email ou contacter le support.'
+          )
           return
         }
 
@@ -62,13 +64,15 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
         }
       } catch (error) {
         console.error('Error loading booking data:', error)
-        setLoadError('Impossible de charger la réservation.')
+        setLoadError(
+          'Impossible de charger la réservation. Veuillez vérifier votre lien de confirmation ou contacter le support.'
+        )
       } finally {
         setIsLoading(false)
       }
     }
     loadBookingData()
-  }, [])
+  }, [reference])
 
   const handleDownloadVoucher = () => {
     toast.success('Téléchargement du voucher...')

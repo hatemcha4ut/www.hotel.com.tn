@@ -62,10 +62,6 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
       if (!currentUser && !isGuestMode) {
         throw new Error('Veuillez vous connecter ou choisir le mode invité.')
       }
-      if (isGuestMode) {
-        throw new Error('La réservation invitée est indisponible. Veuillez réessayer.')
-      }
-
       await createGuestBooking({
         hotel,
         room,
