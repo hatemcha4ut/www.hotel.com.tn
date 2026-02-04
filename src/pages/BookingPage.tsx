@@ -17,9 +17,9 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { AuthDialog } from '@/components/AuthDialog'
-import { ClickToPayIntegration } from '@/components/ClickToPayIntegration'
 import { useKV } from '@github/spark/hooks'
 import { getSupabaseClient } from '@/lib/supabase'
+import { createGuestBooking } from '@/services/guestBooking'
 
 interface BookingPageProps {
   hotel: Hotel
@@ -56,35 +56,13 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const [currentUser, setCurrentUser] = useKV<any>('currentUser', null)
   const [isGuestMode, setIsGuestMode] = useState(false)
-  const [pendingBookingId, setPendingBookingId] = useState<string | null>(null)
-
-  const generateBookingReference = () =>
-    `BK${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`
-
-  const [paymentReference, setPaymentReference] = useState(generateBookingReference)
-
-  const supabaseEdgeUrl = import.meta.env.VITE_SUPABASE_EDGE_URL
-    ?? (import.meta.env.VITE_SUPABASE_URL
-      ? `${import.meta.env.VITE_SUPABASE_URL.replace(/\/$/, '')}/functions/v1`
-      : '')
-
-  const createBookingWithToken = async (accessToken: string) => {
-    if (!supabaseEdgeUrl) {
-      const missingConfig = [
-        import.meta.env.VITE_SUPABASE_EDGE_URL ? null : 'VITE_SUPABASE_EDGE_URL',
-        import.meta.env.VITE_SUPABASE_URL ? null : 'VITE_SUPABASE_URL',
-      ]
-        .filter((value): value is string => Boolean(value))
-        .join(', ')
-      throw new Error(`Configuration Supabase Edge manquante${missingConfig ? ` (${missingConfig})` : ''}.`)
-    }
-    const response = await fetch(`${supabaseEdgeUrl}/create-booking`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
+  const handleSubmit = async () => {
+    setProcessing(true)
+    try {
+      if (!currentUser && !isGuestMode) {
+        throw new Error('Veuillez vous connecter ou choisir le mode invité.')
+      }
+      await createGuestBooking({
         hotel,
         room,
         rooms: bookingRooms.map((r, idx) => ({
@@ -95,62 +73,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
         guestDetails,
         nights,
         totalAmount,
-      }),
-    })
-    if (!response.ok) {
-      throw new Error('Erreur lors de la création de la réservation')
-    }
-    const payload = (await response.json()) as { booking_id?: string }
-    if (!payload.booking_id) {
-      throw new Error('Identifiant de réservation manquant.')
-    }
-    return payload.booking_id
-  }
-
-  const getAuthenticatedBookingId = async () => {
-    const supabase = getSupabaseClient()
-    const { data, error } = await supabase.auth.getSession()
-    if (error) {
-      throw error
-    }
-    const accessToken = data.session?.access_token
-    if (!accessToken) {
-      throw new Error('Session utilisateur indisponible.')
-    }
-    return createBookingWithToken(accessToken)
-  }
-
-  const handleSubmit = async () => {
-    setProcessing(true)
-    try {
-      let bookingId = pendingBookingId
-      if (!bookingId) {
-        if (!currentUser && !isGuestMode) {
-          throw new Error('Veuillez vous connecter ou choisir le mode invité.')
-        }
-        if (isGuestMode) {
-          throw new Error('La réservation invitée est indisponible. Veuillez réessayer.')
-        }
-        bookingId = await getAuthenticatedBookingId()
-      }
-
-      const bookingData = {
-        bookingId,
-        hotel,
-        room,
-        rooms: bookingRooms.map((r, idx) => ({
-          ...r,
-          selectedBoarding: roomBoardings[idx]
-        })),
-        searchParams,
-        guestDetails,
-        nights,
-        totalAmount
-      }
-      await window.spark.kv.set(`booking-${bookingId}`, bookingData)
-      
-      toast.success('Réservation confirmée!')
-      onComplete(bookingId)
+      })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erreur lors de la réservation')
     } finally {
@@ -168,28 +91,17 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
       phone: user.phone || '',
     })
     toast.success(`Bienvenue ${user.name}!`)
-    try {
-      const bookingId = await getAuthenticatedBookingId()
-      setPendingBookingId(bookingId)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de la création de la réservation')
-    }
+    setIsGuestMode(false)
   }
 
   const handleContinueAsGuest = async () => {
     setProcessing(true)
     try {
       const supabase = getSupabaseClient()
-      const { data: authData, error: authError } = await supabase.auth.signInAnonymously()
-      if (authError) {
-        throw authError
+      const { error } = await supabase.auth.signInAnonymously()
+      if (error) {
+        throw error
       }
-      const accessToken = authData.session?.access_token
-      if (!accessToken) {
-        throw new Error('Session invité indisponible.')
-      }
-      const bookingId = await createBookingWithToken(accessToken)
-      setPendingBookingId(bookingId)
       setIsGuestMode(true)
       toast.success('Session invité créée. Vous pouvez finaliser la réservation.')
     } catch (error) {
@@ -763,15 +675,23 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
             )}
 
             {step === 3 && (
-              <ClickToPayIntegration
-                amount={totalAmount}
-                reference={paymentReference}
-                onPaymentSuccess={handleSubmit}
-                onBack={() => {
-                  setPaymentReference(generateBookingReference())
-                  setStep(2)
-                }}
-              />
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Cliquez ci-dessous pour générer votre lien de paiement sécurisé.
+                    </p>
+                    <div className="flex gap-4">
+                      <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
+                        Retour
+                      </Button>
+                      <Button onClick={handleSubmit} className="flex-1" disabled={processing}>
+                        {processing ? 'Redirection...' : 'Procéder au paiement'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
           </div>
 

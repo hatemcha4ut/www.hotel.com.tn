@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { getSupabaseClient } from '@/lib/supabase'
 
 interface ConfirmationPageProps {
   reference: string
@@ -17,30 +18,76 @@ interface ConfirmationPageProps {
 export function ConfirmationPage({ reference, onHome, onNewSearch }: ConfirmationPageProps) {
   const [showVoucher, setShowVoucher] = useState(false)
   const [bookingData, setBookingData] = useState<any>(null)
+  const [confirmationToken, setConfirmationToken] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const resolvedReference =
+    bookingData?.reference ??
+    bookingData?.booking_reference ??
+    bookingData?.bookingId ??
+    bookingData?.booking_id ??
+    reference ??
+    confirmationToken ??
+    ''
 
   useEffect(() => {
     const loadBookingData = async () => {
       try {
-        const data = await window.spark.kv.get(`booking-${reference}`)
+        const searchParams = new URLSearchParams(window.location.search)
+        const tokenFromSearch = searchParams.get('confirmation_token')
+        const hashParams =
+          window.location.hash.includes('?')
+            ? new URLSearchParams(window.location.hash.split('?')[1])
+            : null
+        const tokenFromHash = hashParams?.get('confirmation_token') ?? null
+        const token = tokenFromSearch ?? tokenFromHash
+
+        setConfirmationToken(token)
+
+        if (!token) {
+          setLoadError(
+            'Token de confirmation manquant. Veuillez vérifier le lien reçu par email ou contacter le support.'
+          )
+          setIsLoading(false)
+          return
+        }
+
+        const supabase = getSupabaseClient()
+        const { data, error } = await supabase.functions.invoke('get-confirmation', {
+          body: { confirmation_token: token },
+        })
+        if (error) {
+          throw new Error(error?.message || 'Erreur lors de la récupération de la réservation.')
+        }
         if (data) {
           setBookingData(data)
         }
       } catch (error) {
         console.error('Error loading booking data:', error)
+        setLoadError(
+          'Impossible de charger la réservation. Veuillez vérifier votre lien de confirmation ou contacter le support.'
+        )
+      } finally {
+        setIsLoading(false)
       }
     }
     loadBookingData()
   }, [reference])
 
   const handleDownloadVoucher = () => {
+    if (!resolvedReference) {
+      toast.error('Référence de réservation indisponible.')
+      return
+    }
     toast.success('Téléchargement du voucher...')
-    const barcodeData = generateBarcode(reference)
+    const barcodeData = generateBarcode(resolvedReference)
     const voucherContent = generateVoucherContent(barcodeData, bookingData)
     const blob = new Blob([voucherContent], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `voucher-${reference}.html`
+    a.download = `voucher-${resolvedReference}.html`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -84,6 +131,10 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
   }
 
   const handleAddToGoogleWallet = () => {
+    if (!resolvedReference) {
+      toast.error('Référence de réservation indisponible.')
+      return
+    }
     const hotelName = bookingData?.hotel?.name || 'www.hotel.com.tn'
     const checkIn = bookingData?.searchParams?.checkIn 
       ? format(new Date(bookingData.searchParams.checkIn), 'dd MMMM yyyy', { locale: fr })
@@ -99,8 +150,8 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
       : ''
     
     const passData = {
-      reference,
-      barcode: generateBarcode(reference),
+      reference: resolvedReference,
+      barcode: generateBarcode(resolvedReference),
       type: 'hotel-booking',
       dateIssued: new Date().toISOString(),
       hotelName,
@@ -115,7 +166,7 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `google-wallet-${reference}.json`
+    a.download = `google-wallet-${resolvedReference}.json`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -125,6 +176,10 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
   }
 
   const handleAddToAppleWallet = () => {
+    if (!resolvedReference) {
+      toast.error('Référence de réservation indisponible.')
+      return
+    }
     const hotelName = bookingData?.hotel?.name || 'www.hotel.com.tn'
     const checkIn = bookingData?.searchParams?.checkIn 
       ? format(new Date(bookingData.searchParams.checkIn), 'dd MMMM yyyy', { locale: fr })
@@ -140,8 +195,8 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
       : ''
     
     const passData = {
-      reference,
-      barcode: generateBarcode(reference),
+      reference: resolvedReference,
+      barcode: generateBarcode(resolvedReference),
       type: 'hotel-booking',
       dateIssued: new Date().toISOString(),
       hotelName,
@@ -158,7 +213,7 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `apple-wallet-${reference}.pkpass.json`
+    a.download = `apple-wallet-${resolvedReference}.pkpass.json`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -242,7 +297,7 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Voucher - ${reference}</title>
+        <title>Voucher - ${resolvedReference}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
           .header { text-align: center; margin-bottom: 40px; border-bottom: 3px solid #007bff; padding-bottom: 20px; }
@@ -271,11 +326,11 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
           <p>Voucher de Réservation</p>
         </div>
         
-        <div class="voucher-id">Référence: ${reference}</div>
+        <div class="voucher-id">Référence: ${resolvedReference}</div>
         
         <div class="barcode-container">
           <img src="${barcodeData}" alt="Barcode" />
-          <div class="barcode-number">${reference}</div>
+          <div class="barcode-number">${resolvedReference}</div>
         </div>
         
         <div class="section">
@@ -334,7 +389,7 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
   }
 
   const VoucherPreview = () => {
-    const barcodeData = generateBarcode(reference)
+    const barcodeData = generateBarcode(resolvedReference)
     const hotelName = bookingData?.hotel?.name || 'À compléter'
     const checkInTime = bookingData?.hotel?.checkInTime || '15:00'
     const checkOutTime = bookingData?.hotel?.checkOutTime || '12:00'
@@ -365,13 +420,13 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
 
         <div className="text-center py-4 bg-primary/5 rounded-lg">
           <p className="text-sm text-muted-foreground mb-2">Référence de réservation</p>
-          <p className="text-4xl font-bold text-primary">{reference}</p>
+            <p className="text-4xl font-bold text-primary">{resolvedReference || '---'}</p>
         </div>
 
         {barcodeData && (
           <div className="bg-white p-6 rounded-lg border-2 border-gray-200 flex flex-col items-center">
             <img src={barcodeData} alt="Barcode" className="w-full max-w-[300px] h-auto" />
-            <p className="text-xs text-muted-foreground mt-2 font-mono">{reference}</p>
+            <p className="text-xs text-muted-foreground mt-2 font-mono">{resolvedReference || '---'}</p>
           </div>
         )}
 
@@ -492,15 +547,19 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
             <CheckCircle size={48} className="text-green-600" weight="fill" />
           </div>
           
-          <h1 className="text-3xl font-bold mb-4">Réservation confirmée !</h1>
+          <h1 className="text-3xl font-bold mb-4">
+            {loadError ? 'Réservation introuvable' : 'Réservation confirmée !'}
+          </h1>
           
           <p className="text-muted-foreground mb-6">
-            Votre réservation a été effectuée avec succès. Un email de confirmation a été envoyé.
+            {loadError
+              ? loadError
+              : 'Votre réservation a été effectuée avec succès. Un email de confirmation a été envoyé.'}
           </p>
 
           <div className="bg-muted rounded-lg p-6 mb-8">
             <div className="text-sm text-muted-foreground mb-2">Référence de réservation</div>
-            <div className="text-3xl font-bold text-primary">{reference}</div>
+            <div className="text-3xl font-bold text-primary">{resolvedReference || '---'}</div>
           </div>
 
           <div className="space-y-3">
@@ -520,46 +579,50 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                size="lg"
-                onClick={() => setShowVoucher(true)}
-              >
-                <Eye size={18} className="mr-2" />
-                Voir
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                size="lg"
-                onClick={handleDownloadVoucher}
-              >
-                <Download size={18} className="mr-2" />
-                Télécharger
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                size="lg"
-                onClick={handleAddToAppleWallet}
-              >
-                <Wallet size={18} className="mr-2" />
-                Apple Wallet
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                size="lg"
-                onClick={handleAddToGoogleWallet}
-              >
-                <Wallet size={18} className="mr-2" />
-                Google Wallet
-              </Button>
-            </div>
+            {!loadError && !isLoading && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    size="lg"
+                    onClick={() => setShowVoucher(true)}
+                  >
+                    <Eye size={18} className="mr-2" />
+                    Voir
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleDownloadVoucher}
+                  >
+                    <Download size={18} className="mr-2" />
+                    Télécharger
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleAddToAppleWallet}
+                  >
+                    <Wallet size={18} className="mr-2" />
+                    Apple Wallet
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleAddToGoogleWallet}
+                  >
+                    <Wallet size={18} className="mr-2" />
+                    Google Wallet
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
