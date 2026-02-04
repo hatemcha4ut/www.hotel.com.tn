@@ -33,25 +33,27 @@ const getPaymentUrl = (payload: GuestBookingResponse | null) =>
   payload?.paymentUrl ?? payload?.payment_url
 
 export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
-  console.log('Starting createBooking with:', { bookingData })
   const payload = bookingData
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabase = getSupabaseClient()
 
   try {
-    // Get current session to verify JWT token will be included
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError) {
-      console.warn('Session retrieval warning:', sessionError)
+    // Debug mode: verify JWT token will be included (for development only)
+    if (import.meta.env.DEV) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.warn('Session retrieval warning:', sessionError)
+      }
+      
+      // Log session state for debugging (guest users will have null session, using anon key)
+      const userEmail = sessionData?.session?.user?.email
+      console.log('Auth session status:', {
+        hasSession: !!sessionData?.session,
+        hasAccessToken: !!sessionData?.session?.access_token,
+        userEmail: userEmail ? userEmail.substring(0, 3) + '***' : 'guest',
+      })
     }
-    
-    // Log session state for debugging (guest users will have null session, using anon key)
-    console.log('Auth session status:', {
-      hasSession: !!sessionData?.session,
-      hasAccessToken: !!sessionData?.session?.access_token,
-      userEmail: sessionData?.session?.user?.email || 'guest',
-    })
     
     console.log('Payload ready:', payload)
     const functionUrl = supabaseUrl
