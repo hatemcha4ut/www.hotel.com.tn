@@ -1,23 +1,14 @@
-# ✨ Welcome to Your Spark Template!
-You've just launched your brand-new Spark Template Codespace — everything’s fired up and ready for you to explore, build, and create with Spark!
+# www.hotel.com.tn
 
-This template is your blank canvas. It comes with a minimal setup to help you get started quickly with Spark development.
+Frontend for hotel search + booking.
 
-🚀 What's Inside?
-- A clean, minimal Spark environment
-- Pre-configured for local development
-- Ready to scale with your ideas
-  
-🧠 What Can You Do?
+## Development notes (smoke test)
 
-Right now, this is just a starting point — the perfect place to begin building and testing your Spark applications.
+- **Search**: verify search-hotels returns results without any token in the response.
+- **Booking (guest)**: trigger booking as guest; the app will call `supabase.auth.signInAnonymously()` if needed and send `Authorization: Bearer <access_token>` to `create-booking`.
+- **Booking (logged-in)**: confirm booking uses the active Supabase session JWT and `create-booking` succeeds without a supplier token in the browser.
 
-🧹 Just Exploring?
-No problem! If you were just checking things out and don’t need to keep this code:
+## Contracts
 
-- Simply delete your Spark.
-- Everything will be cleaned up — no traces left behind.
-
-📄 License For Spark Template Resources 
-
-The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
+- `search-hotels` is public and token-free.
+- `create-booking` is protected and requires a Supabase JWT.
