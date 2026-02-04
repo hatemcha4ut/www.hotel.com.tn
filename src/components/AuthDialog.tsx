@@ -8,6 +8,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Envelope, Phone, LockKey } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { getSupabaseClient } from '@/lib/supabase'
+ copilot/remove-spark-legacy-code
+import type { User } from '@supabase/supabase-js'
+
+ main
 import { buildAuthUser, type AuthUser } from '@/lib/auth'
 
 interface AuthDialogProps {

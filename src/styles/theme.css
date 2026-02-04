@@ -85,6 +85,8 @@
     border-color: var(--color-gray-200, currentColor);
   }
 }
+ copilot/remove-spark-legacy-code
+
 
 @layer base {
   #root {
@@ -260,3 +262,4 @@
     --color-bg-overlay: var(--color-neutral-3);
   }
 }
+ main
