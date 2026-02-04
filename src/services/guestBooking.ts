@@ -25,16 +25,32 @@ const getPaymentUrl = (payload: GuestBookingResponse | null) =>
 export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
   console.log('Starting createBooking with:', { bookingData })
   const payload = bookingData
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabase = getSupabaseClient()
 
   try {
     console.log('Payload ready:', payload)
-    const { data, error } = await supabase.functions.invoke<GuestBookingResponse>(
+    const functionUrl = supabaseUrl
+      ? new URL('/functions/v1/create-booking', supabaseUrl).toString()
+      : null
+    console.log(
+      'Supabase function URL:',
+      functionUrl ?? 'VITE_SUPABASE_URL manquante.'
+    )
+    const response = await supabase.functions.invoke<GuestBookingResponse>(
       'create-booking',
       {
         body: payload,
       }
     )
+    console.log('Raw create-booking response:', response)
+    const { data, error } = response
+    if (!data && !error) {
+      console.error(
+        'Supabase function returned null data without an error.',
+        response
+      )
+    }
 
     if (error) {
       throw new Error(error?.message || 'Impossible de créer la réservation.')
