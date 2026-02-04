@@ -7,12 +7,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Envelope, Phone, LockKey } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import { useKV } from '@github/spark/hooks'
+import { getSupabaseClient } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+
+export interface AuthUser {
+  id: string
+  email: string
+  phone: string
+  name: string
+}
 
 interface AuthDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAuthSuccess?: (user: any) => void
+  onAuthSuccess?: (user: AuthUser) => void
 }
 
 export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) {
@@ -30,18 +38,51 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
   const [verificationCode, setVerificationCode] = useState('')
   const [generatedCode, setGeneratedCode] = useState('')
 
+  const buildUserPayload = (user: User | null): AuthUser => {
+    if (!user) {
+      throw new Error('Utilisateur non disponible.')
+    }
+    const metadata = (user.user_metadata ?? {}) as {
+      first_name?: string
+      last_name?: string
+      phone?: string
+      name?: string
+    }
+    const fallbackName = user.email ? user.email.split('@')[0] : ''
+    const firstName = metadata.first_name ?? ''
+    const lastName = metadata.last_name ?? ''
+    return {
+      id: user.id,
+      email: user.email ?? '',
+      phone: user.phone ?? metadata.phone ?? '',
+      name: `${firstName} ${lastName}`.trim() || metadata.name || fallbackName,
+    }
+  }
+
   const generateCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString()
   }
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!loginData.email || !loginData.password) {
       toast.error('Veuillez remplir tous les champs')
       return
     }
-    toast.success('Connexion réussie!')
-    onAuthSuccess?.({ email: loginData.email, name: loginData.email.split('@')[0] })
-    onOpenChange(false)
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      })
+      if (error) {
+        throw error
+      }
+      toast.success('Connexion réussie!')
+      onAuthSuccess?.(buildUserPayload(data.user))
+      onOpenChange(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la connexion')
+    }
   }
 
   const handleRegister = () => {
@@ -69,18 +110,33 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
     setStep('verify')
   }
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (verificationCode === generatedCode) {
-      toast.success('Compte créé avec succès!')
-      onAuthSuccess?.({ 
-        email: registerData.email, 
-        name: `${registerData.firstName} ${registerData.lastName}`,
-        phone: registerData.phone 
-      })
-      onOpenChange(false)
-      setStep('auth')
-      setVerificationCode('')
-      setGeneratedCode('')
+      try {
+        const supabase = getSupabaseClient()
+        const { data, error } = await supabase.auth.signUp({
+          email: registerData.email,
+          password: registerData.password,
+          options: {
+            data: {
+              first_name: registerData.firstName,
+              last_name: registerData.lastName,
+              phone: registerData.phone,
+            },
+          },
+        })
+        if (error) {
+          throw error
+        }
+        onAuthSuccess?.(buildUserPayload(data.user))
+        toast.success('Compte créé avec succès!')
+        onOpenChange(false)
+        setStep('auth')
+        setVerificationCode('')
+        setGeneratedCode('')
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Erreur lors de la création du compte')
+      }
     } else {
       toast.error('Code de vérification incorrect')
     }

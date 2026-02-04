@@ -7,6 +7,7 @@ import { t } from '@/lib/translations'
 import { AuthDialog } from '@/components/AuthDialog'
 import { useKV } from '@github/spark/hooks'
 import hotelCitiesLogo from '@/assets/images/logo hotel.com.tn.svg'
+import { getSupabaseClient } from '@/lib/supabase'
 
 export function Navbar() {
   const { language, setLanguage } = useApp()
@@ -66,8 +67,14 @@ export function Navbar() {
     setCurrentUser(user)
   }
 
-  const handleSignOut = () => {
-    setCurrentUser(null)
+  const handleSignOut = async () => {
+    try {
+      const supabase = getSupabaseClient()
+      await supabase.auth.signOut()
+      setCurrentUser(null)
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion', error)
+    }
   }
 
   return (

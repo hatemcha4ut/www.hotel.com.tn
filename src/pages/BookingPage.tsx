@@ -11,14 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { CheckCircle, ArrowLeft, User, UserPlus, MagnifyingGlass } from '@phosphor-icons/react'
 import { Hotel, Room, GuestDetails } from '@/types'
+import type { AuthUser } from '@/components/AuthDialog'
 import { useApp } from '@/contexts/AppContext'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { api } from '@/lib/api'
 import { toast } from 'sonner'
 import { AuthDialog } from '@/components/AuthDialog'
 import { ClickToPayIntegration } from '@/components/ClickToPayIntegration'
 import { useKV } from '@github/spark/hooks'
+import { getSupabaseClient } from '@/lib/supabase'
 
 interface BookingPageProps {
   hotel: Hotel
@@ -54,20 +55,87 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
   const [processing, setProcessing] = useState(false)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const [currentUser, setCurrentUser] = useKV<any>('currentUser', null)
-  const [accountChoice, setAccountChoice] = useState<'guest' | 'create' | 'login' | null>(null)
+  const [isGuestMode, setIsGuestMode] = useState(false)
+  const [pendingBookingId, setPendingBookingId] = useState<string | null>(null)
+
+  const generateBookingReference = () =>
+    `BK${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`
+
+  const [paymentReference, setPaymentReference] = useState(generateBookingReference)
+
+  const supabaseEdgeUrl = import.meta.env.VITE_SUPABASE_EDGE_URL
+    ?? (import.meta.env.VITE_SUPABASE_URL
+      ? `${import.meta.env.VITE_SUPABASE_URL.replace(/\/$/, '')}/functions/v1`
+      : '')
+
+  const createBookingWithToken = async (accessToken: string) => {
+    if (!supabaseEdgeUrl) {
+      const missingConfig = [
+        import.meta.env.VITE_SUPABASE_EDGE_URL ? null : 'VITE_SUPABASE_EDGE_URL',
+        import.meta.env.VITE_SUPABASE_URL ? null : 'VITE_SUPABASE_URL',
+      ]
+        .filter((value): value is string => Boolean(value))
+        .join(', ')
+      throw new Error(`Configuration Supabase Edge manquante${missingConfig ? ` (${missingConfig})` : ''}.`)
+    }
+    const response = await fetch(`${supabaseEdgeUrl}/create-booking`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        hotel,
+        room,
+        rooms: bookingRooms.map((r, idx) => ({
+          ...r,
+          selectedBoarding: roomBoardings[idx],
+        })),
+        searchParams,
+        guestDetails,
+        nights,
+        totalAmount,
+      }),
+    })
+    if (!response.ok) {
+      throw new Error('Erreur lors de la création de la réservation')
+    }
+    const payload = (await response.json()) as { booking_id?: string }
+    if (!payload.booking_id) {
+      throw new Error('Identifiant de réservation manquant.')
+    }
+    return payload.booking_id
+  }
+
+  const getAuthenticatedBookingId = async () => {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase.auth.getSession()
+    if (error) {
+      throw error
+    }
+    const accessToken = data.session?.access_token
+    if (!accessToken) {
+      throw new Error('Session utilisateur indisponible.')
+    }
+    return createBookingWithToken(accessToken)
+  }
 
   const handleSubmit = async () => {
     setProcessing(true)
     try {
-      const result = await api.createBooking({
-        hotel,
-        room,
-        searchParams,
-        guestDetails,
-      })
-      
+      let bookingId = pendingBookingId
+      if (!bookingId) {
+        if (!currentUser && !isGuestMode) {
+          throw new Error('Veuillez vous connecter ou choisir le mode invité.')
+        }
+        if (isGuestMode) {
+          throw new Error('La réservation invitée est indisponible. Veuillez réessayer.')
+        }
+        bookingId = await getAuthenticatedBookingId()
+      }
+
       const bookingData = {
-        reference: result.reference,
+        bookingId,
         hotel,
         room,
         rooms: bookingRooms.map((r, idx) => ({
@@ -79,18 +147,18 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
         nights,
         totalAmount
       }
-      await window.spark.kv.set(`booking-${result.reference}`, bookingData)
+      await window.spark.kv.set(`booking-${bookingId}`, bookingData)
       
       toast.success('Réservation confirmée!')
-      onComplete(result.reference)
+      onComplete(bookingId)
     } catch (error) {
-      toast.error('Erreur lors de la réservation')
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la réservation')
     } finally {
       setProcessing(false)
     }
   }
 
-  const handleAuthSuccess = (user: any) => {
+  const handleAuthSuccess = async (user: AuthUser) => {
     setCurrentUser(user)
     setGuestDetails({
       ...guestDetails,
@@ -100,14 +168,38 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
       phone: user.phone || '',
     })
     toast.success(`Bienvenue ${user.name}!`)
+    try {
+      const bookingId = await getAuthenticatedBookingId()
+      setPendingBookingId(bookingId)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la création de la réservation')
+    }
   }
 
-  const handleContinueAsGuest = () => {
-    setAccountChoice('guest')
+  const handleContinueAsGuest = async () => {
+    setProcessing(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: authData, error: authError } = await supabase.auth.signInAnonymously()
+      if (authError) {
+        throw authError
+      }
+      const accessToken = authData.session?.access_token
+      if (!accessToken) {
+        throw new Error('Session invité indisponible.')
+      }
+      const bookingId = await createBookingWithToken(accessToken)
+      setPendingBookingId(bookingId)
+      setIsGuestMode(true)
+      toast.success('Session invité créée. Vous pouvez finaliser la réservation.')
+    } catch (error) {
+      toast.error('Impossible de démarrer une session invité. Veuillez réessayer.')
+    } finally {
+      setProcessing(false)
+    }
   }
 
-  const handleCreateAccount = () => {
-    setAccountChoice('create')
+  const handleOpenAuthDialog = () => {
     setAuthDialogOpen(true)
   }
   
@@ -143,10 +235,6 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
       : 1
 
   const totalAmount = bookingRooms.reduce((sum, r, idx) => sum + getRoomTotal(r, idx), 0)
-
-  const generateBookingReference = () => {
-    return `BK${Date.now().toString().slice(-8)}`
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -589,7 +677,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
                   </CardContent>
                 </Card>
 
-                {!currentUser && accountChoice === null && (
+                {!currentUser && !isGuestMode && (
                   <Card className="border-2 border-primary/20 shadow-lg">
                     <CardHeader className="space-y-2 pb-4">
                       <CardTitle className="text-lg sm:text-xl">Comment souhaitez-vous continuer ?</CardTitle>
@@ -601,7 +689,8 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
                       <Button 
                         variant="outline" 
                         className="w-full justify-start gap-3 sm:gap-4 h-auto py-4 px-3 sm:px-4 border-2 hover:border-primary hover:bg-primary/5 transition-all"
-                        onClick={handleCreateAccount}
+                        onClick={handleOpenAuthDialog}
+                        disabled={processing}
                       >
                         <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center">
                           <UserPlus className="text-primary w-6 h-6 sm:w-7 sm:h-7" weight="duotone" />
@@ -627,12 +716,13 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
                         variant="outline" 
                         className="w-full justify-start gap-3 sm:gap-4 h-auto py-4 px-3 sm:px-4 border-2 hover:border-accent hover:bg-accent/5 transition-all"
                         onClick={handleContinueAsGuest}
+                        disabled={processing}
                       >
                         <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-accent/10 flex items-center justify-center">
                           <User className="text-accent w-6 h-6 sm:w-7 sm:h-7" weight="duotone" />
                         </div>
                         <div className="text-left flex-1 min-w-0">
-                          <div className="font-semibold text-sm sm:text-base mb-1">Continuer en visiteur</div>
+                          <div className="font-semibold text-sm sm:text-base mb-1">Réserver en tant qu'invité</div>
                           <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                             Réservez rapidement sans compte
                           </div>
@@ -661,7 +751,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
                       </Button>
                       <Button
                         onClick={() => setStep(3)}
-                        disabled={!acceptTerms || (!currentUser && accountChoice === null)}
+                        disabled={!acceptTerms || (!currentUser && !isGuestMode)}
                         className="flex-1"
                       >
                         Continuer vers le paiement
@@ -675,9 +765,12 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
             {step === 3 && (
               <ClickToPayIntegration
                 amount={totalAmount}
-                reference={generateBookingReference()}
+                reference={paymentReference}
                 onPaymentSuccess={handleSubmit}
-                onBack={() => setStep(2)}
+                onBack={() => {
+                  setPaymentReference(generateBookingReference())
+                  setStep(2)
+                }}
               />
             )}
           </div>
