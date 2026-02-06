@@ -26,7 +26,7 @@ const mapCity = (city: InventoryCity): City | null => {
     return null
   }
   const fallbackId = [name, city.Region, city.Country?.Name]
-    .map((value) => normalizeLabelValue(value))
+    .map((value) => encodeURIComponent(normalizeLabelValue(value)))
     .filter(Boolean)
     .join('|')
 
