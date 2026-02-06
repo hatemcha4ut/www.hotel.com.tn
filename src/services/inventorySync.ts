@@ -95,8 +95,13 @@ export const searchInventory = async (
     ...payload,
   })
   // Some backend responses use "Token" instead of "token".
-  const dataWithToken = data as (InventorySyncSearchResponse & { Token?: string }) | null
-  const tokenValue = dataWithToken?.token ?? dataWithToken?.Token
+  let tokenValue = data?.token
+  if (!tokenValue && data && 'Token' in data) {
+    const tokenCandidate = (data as { Token?: unknown }).Token
+    if (typeof tokenCandidate === 'string') {
+      tokenValue = tokenCandidate
+    }
+  }
   const normalizedData: InventorySyncSearchResponse | null = data
     ? {
         hotels: data.hotels ?? [],
