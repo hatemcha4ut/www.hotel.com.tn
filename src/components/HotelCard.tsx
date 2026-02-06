@@ -128,7 +128,10 @@ export function HotelCard({ hotel, onViewDetails }: HotelCardProps) {
                 <div className="text-xs text-muted-foreground">{t('common.perNight', language)}</div>
               </>
             ) : (
-              <div className="text-base font-semibold text-primary">-</div>
+              <div className="text-base font-semibold text-primary">
+                <span aria-hidden="true">-</span>
+                <span className="sr-only">{t('common.priceUnavailable', language)}</span>
+              </div>
             )}
             {onRequestOnly && (
               <div className="text-xs text-muted-foreground">

@@ -20,7 +20,7 @@ export interface SearchRequest {
 export interface SearchHotelRoom {
   price?: number
   onRequest?: boolean
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface SearchHotel {
@@ -28,7 +28,7 @@ export interface SearchHotel {
   name: string
   available?: boolean
   rooms: SearchHotelRoom[]
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface SearchResponse {
@@ -43,26 +43,26 @@ export interface SearchHotelsResult {
   visibleCount?: number
 }
 
-const normalizeText = (value: unknown) => {
+const normalizeToNonEmptyString = (value: unknown) => {
   if (typeof value !== 'string') {
     return undefined
   }
   const trimmed = value.trim()
-  return trimmed ? trimmed : undefined
+  return trimmed || undefined
 }
 
 const extractLocation = (hotel: SearchHotel) => {
   const candidates = [
-    normalizeText((hotel as { region?: unknown }).region),
-    normalizeText((hotel as { city?: unknown }).city),
-    normalizeText((hotel as { cityName?: unknown }).cityName),
-    normalizeText((hotel as { location?: { city?: unknown } }).location?.city),
-    normalizeText((hotel as { location?: { region?: unknown } }).location?.region),
+    normalizeToNonEmptyString((hotel as { region?: unknown }).region),
+    normalizeToNonEmptyString((hotel as { city?: unknown }).city),
+    normalizeToNonEmptyString((hotel as { cityName?: unknown }).cityName),
+    normalizeToNonEmptyString((hotel as { location?: { city?: unknown } }).location?.city),
+    normalizeToNonEmptyString((hotel as { location?: { region?: unknown } }).location?.region),
   ]
   return candidates.find((value): value is string => Boolean(value))
 }
 
-const isValidPrice = (value: unknown): value is number =>
+const isValidNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
 
 const normalizeHotelRooms = (rooms: SearchHotelRoom[] | undefined) =>
@@ -73,7 +73,7 @@ export const buildSearchRequest = (params: SearchParams): SearchRequest => {
     throw new Error('Veuillez sélectionner une ville.')
   }
   const cityId = Number(params.cityId)
-  if (!Number.isFinite(cityId)) {
+  if (!Number.isFinite(cityId) || cityId < 1) {
     throw new Error('Ville invalide. Veuillez sélectionner une ville valide.')
   }
   if (!params.checkIn || !params.checkOut) {
@@ -94,34 +94,36 @@ export const buildSearchRequest = (params: SearchParams): SearchRequest => {
 export const mapSearchHotelsToList = (hotels: SearchHotel[]): Hotel[] =>
   hotels.map((hotel) => {
     const rooms = normalizeHotelRooms(hotel.rooms)
-    const prices = rooms.map((room) => room.price).filter(isValidPrice)
+    const prices = rooms.map((room) => room.price).filter(isValidNumber)
     const minPrice = prices.length ? Math.min(...prices) : undefined
     const onRequestOnly = rooms.length > 0 && rooms.every((room) => room.onRequest === true)
     const location = extractLocation(hotel)
     const images = Array.isArray(hotel.images)
-      ? hotel.images.filter((image: unknown): image is string => Boolean(normalizeText(image)))
+      ? hotel.images.filter((image: unknown): image is string =>
+          Boolean(normalizeToNonEmptyString(image))
+        )
       : []
-    const image = normalizeText((hotel as { image?: unknown }).image) ?? images[0] ?? ''
+    const image = normalizeToNonEmptyString((hotel as { image?: unknown }).image) ?? images[0] ?? ''
     const amenities = Array.isArray(hotel.amenities)
       ? hotel.amenities.filter((amenity: unknown): amenity is string =>
-          Boolean(normalizeText(amenity))
+          Boolean(normalizeToNonEmptyString(amenity))
         )
       : []
     const boardingType = Array.isArray(hotel.boardingType)
       ? hotel.boardingType.filter((boarding: unknown): boarding is string =>
-          Boolean(normalizeText(boarding))
+          Boolean(normalizeToNonEmptyString(boarding))
         )
       : []
     return {
       type: 'hotel',
       id: String(hotel.id),
-      name: normalizeText(hotel.name) ?? `Hôtel ${hotel.id}`,
+      name: normalizeToNonEmptyString(hotel.name) ?? String(hotel.id),
       city: location ?? '',
       address: location ?? '',
-      stars: isValidPrice(hotel.stars) ? hotel.stars : 0,
-      rating: isValidPrice(hotel.rating) ? hotel.rating : 0,
-      reviewCount: isValidPrice(hotel.reviewCount) ? hotel.reviewCount : 0,
-      description: normalizeText(hotel.description) ?? '',
+      stars: isValidNumber(hotel.stars) ? hotel.stars : 0,
+      rating: isValidNumber(hotel.rating) ? hotel.rating : 0,
+      reviewCount: isValidNumber(hotel.reviewCount) ? hotel.reviewCount : 0,
+      description: normalizeToNonEmptyString(hotel.description) ?? '',
       image,
       images: images.length ? images : image ? [image] : [],
       price: minPrice ?? 0,

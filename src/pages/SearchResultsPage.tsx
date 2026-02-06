@@ -39,6 +39,13 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500])
   const [selectedStars, setSelectedStars] = useState<number[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const showCounts =
+    import.meta.env.DEV &&
+    searchCounts &&
+    (searchCounts.visibleCount !== undefined || searchCounts.rawCount !== undefined)
+  const devCountsLabel = t('search.devCountsLabel', language)
+  const visibleCount = searchCounts?.visibleCount
+  const rawCount = searchCounts?.rawCount
 
   useEffect(() => {
     if (initialResults) {
@@ -157,12 +164,10 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
                   </span>
                 )}
               </div>
-              {import.meta.env.DEV &&
-                searchCounts &&
-                (searchCounts.visibleCount !== undefined || searchCounts.rawCount !== undefined) && (
+              {showCounts && (
                 <div className="text-xs text-muted-foreground mt-1">
-                  Hôtels trouvés : {searchCounts.visibleCount ?? filteredHotels.length}
-                  {searchCounts.rawCount !== undefined ? ` (brut : ${searchCounts.rawCount})` : ''}
+                  {devCountsLabel} : {visibleCount ?? rawCount}
+                  {visibleCount !== undefined && rawCount !== undefined ? ` (brut : ${rawCount})` : ''}
                 </div>
               )}
             </div>
