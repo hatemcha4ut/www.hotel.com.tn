@@ -94,8 +94,8 @@ export const searchInventory = async (
     action: 'search',
     ...payload,
   })
-  const dataRecord = data as Record<string, unknown> | null
-  const tokenValue = dataRecord?.token ?? dataRecord?.Token
+  const dataWithToken = data as (InventorySyncSearchResponse & { Token?: string }) | null
+  const tokenValue = dataWithToken?.token ?? dataWithToken?.Token
   const normalizedData: InventorySyncSearchResponse | null = data
     ? {
         hotels: data.hotels ?? [],

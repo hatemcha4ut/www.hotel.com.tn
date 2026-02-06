@@ -125,7 +125,7 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
       if (error.status === 401 || error.status === 403) {
         throw new Error('Session expirée. Veuillez vous reconnecter et réessayer.')
       }
-      throw new Error(error?.message || 'Unable to create booking.')
+      throw new Error(error?.message || 'Impossible de créer la réservation.')
     }
 
     const myGoError = getMyGoErrorMessage(data)
@@ -136,7 +136,7 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
     const paymentUrl = getPaymentUrl(data ?? null)
     if (!paymentUrl) {
       throw new Error(
-        'Booking created but the payment URL is missing. Please contact support.'
+        "La réservation a été créée mais l'URL de paiement est manquante. Veuillez contacter le support."
       )
     }
 
