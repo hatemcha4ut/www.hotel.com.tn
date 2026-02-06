@@ -50,7 +50,6 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
           results = await fetchHotelsByCity(searchParams.cityId)
         } else {
           const response = await searchInventory({
-            cityId: searchParams.cityId,
             hotelName: searchParams.hotelName,
             checkIn: searchParams.checkIn ? format(searchParams.checkIn, 'yyyy-MM-dd') : undefined,
             checkOut: searchParams.checkOut ? format(searchParams.checkOut, 'yyyy-MM-dd') : undefined,
