@@ -90,7 +90,7 @@ export function CityAutocomplete({
     return searchableCities
       .filter((city) => city.searchValue.includes(normalizedQuery))
       .map((city) => city.city)
-  }, [cities, query, searchableCities])
+  }, [query, searchableCities])
 
   const listId = `${listboxId}-listbox`
   const activeOption =

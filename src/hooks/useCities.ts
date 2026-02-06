@@ -26,8 +26,11 @@ const mapCity = (city: InventoryCity): City | null => {
   if (!name) {
     return null
   }
-  const fallbackId = [name, city.Region, city.Country?.Name]
-    .map((value) => normalizeLabelValue(value))
+  const fallbackId = [
+    name,
+    normalizeLabelValue(city.Region),
+    normalizeLabelValue(city.Country?.Name),
+  ]
     .filter(Boolean)
     .join('::')
 
