@@ -72,24 +72,22 @@ export function CityAutocomplete({
     }
   }, [cities, selectedCityId])
 
-  const searchableCities = useMemo(() => {
-    if (cities.length === 0) {
-      return []
-    }
-    return cities.map((city) => ({
-      city,
-      searchValue: normalizeForSearch(getCitySearchValue(city)),
-    }))
-  }, [cities])
+  const searchableCities = useMemo(
+    () =>
+      cities.map((city) => ({
+        city,
+        searchValue: normalizeForSearch(getCitySearchValue(city)),
+      })),
+    [cities]
+  )
 
   const filteredCities = useMemo(() => {
     const normalizedQuery = normalizeForSearch(query)
-    if (!normalizedQuery) {
-      return cities
-    }
     // Match by name/region/country so searches work with all available metadata.
     return searchableCities
-      .filter((city) => city.searchValue.includes(normalizedQuery))
+      .filter((city) =>
+        normalizedQuery ? city.searchValue.includes(normalizedQuery) : true
+      )
       .map((city) => city.city)
   }, [query, searchableCities])
 

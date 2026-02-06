@@ -82,7 +82,8 @@ export function useCities() {
         return
       }
 
-      const fetchedCities = Array.isArray(data.data?.cities) ? data.data?.cities : []
+      const responseCities = data.data?.cities
+      const fetchedCities = Array.isArray(responseCities) ? responseCities : []
       // Only keep cities with a name; region/country are optional and used for search/display.
       const nextCities = fetchedCities.map(mapCity).filter((city): city is City => Boolean(city))
       setCities(sortCities(nextCities))
