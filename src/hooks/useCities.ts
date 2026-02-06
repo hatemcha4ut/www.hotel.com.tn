@@ -18,8 +18,10 @@ interface InventorySyncResponse {
   }
 }
 
-const normalizeLabelValue = (value?: string | null) =>
-  value?.trim().replace(/\s+/g, ' ') || ''
+const normalizeLabelValue = (value?: string | null) => {
+  const normalized = value?.trim().replace(/\s+/g, ' ')
+  return normalized ? normalized : undefined
+}
 
 const mapCity = (city: InventoryCity): City | null => {
   const name = normalizeLabelValue(city.Name)
@@ -37,8 +39,8 @@ const mapCity = (city: InventoryCity): City | null => {
   return {
     id: city.Id !== null && city.Id !== undefined ? String(city.Id) : fallbackId,
     name,
-    region: normalizeLabelValue(city.Region) || undefined,
-    country: normalizeLabelValue(city.Country?.Name) || undefined,
+    region: normalizeLabelValue(city.Region),
+    country: normalizeLabelValue(city.Country?.Name),
   }
 }
 

@@ -72,14 +72,15 @@ export function CityAutocomplete({
     }
   }, [cities, selectedCityId])
 
-  const searchableCities = useMemo(
-    () =>
-      cities.map((city) => ({
-        city,
-        searchValue: normalizeForSearch(getCitySearchValue(city)),
-      })),
-    [cities]
-  )
+  const searchableCities = useMemo(() => {
+    if (cities.length === 0) {
+      return []
+    }
+    return cities.map((city) => ({
+      city,
+      searchValue: normalizeForSearch(getCitySearchValue(city)),
+    }))
+  }, [cities])
 
   const filteredCities = useMemo(() => {
     const normalizedQuery = normalizeForSearch(query)
