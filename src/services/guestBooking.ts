@@ -112,7 +112,7 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
       response = await invokeCreateBooking(retryToken)
     }
 
-    console.log('Raw create-booking response:', response)
+    console.log('Raw booking response:', response)
     const { data, error } = response
     if (!data && !error) {
       console.error(
