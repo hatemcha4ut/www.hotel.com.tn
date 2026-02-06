@@ -70,7 +70,7 @@ export const fetchCities = async (): Promise<City[]> => {
   const data = await invokeInventorySync<InventorySyncCitiesResponse>({ action: 'cities' })
   const cities = data?.cities ?? []
   if (import.meta.env.DEV) {
-    console.log(`[Inventory] villes chargées: ${cities.length}`)
+    console.log(`[Inventory] cities loaded: ${cities.length}`)
   }
   return cities
 }
@@ -82,7 +82,7 @@ export const fetchHotelsByCity = async (cityId: string): Promise<Hotel[]> => {
   })
   const hotels = data?.hotels ?? []
   if (import.meta.env.DEV) {
-    console.log(`[Inventory] hôtels chargés pour la ville (id: ${cityId}): ${hotels.length}`)
+    console.log(`[Inventory] hotels loaded for city (id: ${cityId}): ${hotels.length}`)
   }
   return hotels
 }
@@ -104,7 +104,7 @@ export const searchInventory = async (
       }
     : null
   if (import.meta.env.DEV) {
-    console.log(`[Inventory] token présent dans search: ${Boolean(tokenValue)}`)
+    console.log(`[Inventory] token present in search: ${Boolean(tokenValue)}`)
   }
   return normalizedData
 }
