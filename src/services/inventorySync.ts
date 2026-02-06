@@ -44,7 +44,7 @@ export const getMyGoErrorMessage = (payload: unknown): string | null => {
   return null
 }
 
-const invokeInventorySync = async <T>(
+const invokeInventorySyncAction = async <T>(
   payload: InventorySyncPayload,
   headers?: Record<string, string>
 ) => {
@@ -67,7 +67,7 @@ const invokeInventorySync = async <T>(
 }
 
 export const fetchCities = async (): Promise<City[]> => {
-  const data = await invokeInventorySync<InventorySyncCitiesResponse>({ action: 'cities' })
+  const data = await invokeInventorySyncAction<InventorySyncCitiesResponse>({ action: 'cities' })
   const cities = data?.cities ?? []
   if (import.meta.env.DEV) {
     console.log(`[Inventory] cities loaded: ${cities.length}`)
@@ -76,7 +76,7 @@ export const fetchCities = async (): Promise<City[]> => {
 }
 
 export const fetchHotelsByCity = async (cityId: string): Promise<Hotel[]> => {
-  const data = await invokeInventorySync<InventorySyncHotelsResponse>({
+  const data = await invokeInventorySyncAction<InventorySyncHotelsResponse>({
     action: 'hotels',
     cityId,
   })
@@ -90,7 +90,7 @@ export const fetchHotelsByCity = async (cityId: string): Promise<Hotel[]> => {
 export const searchInventory = async (
   payload: InventorySyncPayload
 ): Promise<InventorySyncSearchResponse | null> => {
-  const data = await invokeInventorySync<InventorySyncSearchResponse>({
+  const data = await invokeInventorySyncAction<InventorySyncSearchResponse>({
     action: 'search',
     ...payload,
   })
@@ -118,10 +118,10 @@ export const bookInventory = async <T>(
   payload: InventorySyncPayload,
   headers?: Record<string, string>
 ) =>
-  invokeInventorySync<T>(
+  invokeInventorySyncAction<T>(
     {
-      action: 'booking',
       ...payload,
+      action: 'booking',
     },
     headers
   )

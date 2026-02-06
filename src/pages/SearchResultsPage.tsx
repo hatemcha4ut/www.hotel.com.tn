@@ -47,7 +47,7 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
       setLoading(true)
       try {
         let results: Hotel[] = []
-        // City mode lists hotels for the chosen destination; other modes use the inventory search.
+        // city mode lists hotels for the chosen destination; other modes use the inventory search.
         if (searchParams.searchMode === 'city' && searchParams.cityId) {
           results = await fetchHotelsByCity(searchParams.cityId)
         } else {
