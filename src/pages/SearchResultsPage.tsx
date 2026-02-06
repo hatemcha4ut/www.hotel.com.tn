@@ -55,7 +55,7 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
             checkIn: searchParams.checkIn ? format(searchParams.checkIn, 'yyyy-MM-dd') : undefined,
             checkOut: searchParams.checkOut ? format(searchParams.checkOut, 'yyyy-MM-dd') : undefined,
           })
-          results = Array.isArray(response?.hotels) ? response?.hotels : []
+          results = response?.hotels ?? []
         }
         setHotels(results)
         setFilteredHotels(results)

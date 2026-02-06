@@ -22,7 +22,7 @@ export const getMyGoErrorMessage = (payload: unknown): string | null => {
     return null
   }
 
-  const record = payload as Record<string, any>
+  const record = payload as Record<string, unknown>
   const errorPayload = record.error ?? record.Error ?? record.errors
 
   if (typeof errorPayload === 'string') {
@@ -30,7 +30,8 @@ export const getMyGoErrorMessage = (payload: unknown): string | null => {
   }
 
   if (errorPayload && typeof errorPayload === 'object') {
-    const message = (errorPayload as Record<string, any>).message ?? (errorPayload as Record<string, any>).Message
+    const errorRecord = errorPayload as Record<string, unknown>
+    const message = errorRecord.message ?? errorRecord.Message
     if (typeof message === 'string' && message.trim()) {
       return message
     }
@@ -55,7 +56,7 @@ const invokeInventorySync = async <T>(
   })
 
   if (error) {
-    throw new Error(error?.message || 'Erreur lors de l’appel inventory-sync.')
+    throw new Error(error.message || 'Erreur lors de l’appel inventory-sync.')
   }
 
   const myGoError = getMyGoErrorMessage(data)

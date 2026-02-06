@@ -154,7 +154,7 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
     
     try {
       const response = await searchInventory(searchPayload)
-      const results = Array.isArray(response?.hotels) ? response?.hotels : []
+      const results = response?.hotels ?? []
       console.log('[Search] Request end - Results count:', results.length)
       onResultsFound(results)
       onSearch()
