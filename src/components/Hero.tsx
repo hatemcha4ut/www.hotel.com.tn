@@ -12,8 +12,8 @@ import { MagnifyingGlass, Users, Minus, Plus, X } from '@phosphor-icons/react'
 import { format } from 'date-fns'
 import { useApp } from '@/contexts/AppContext'
 import { t } from '@/lib/translations'
-import { Hotel } from '@/types'
-import { apiClient } from '@/services/apiClient'
+import { City, Hotel } from '@/types'
+import { fetchCities, searchInventory } from '@/services/inventorySync'
 import { toast } from 'sonner'
 import { useCities } from '@/hooks/useCities'
 
@@ -28,6 +28,26 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(false)
   const [isCorsError, setIsCorsError] = useState(false)
+  const [cities, setCities] = useState<City[]>([])
+
+  useEffect(() => {
+    let isActive = true
+    const loadCities = async () => {
+      try {
+        const results = await fetchCities()
+        if (!isActive) {
+          return
+        }
+        setCities(results)
+      } catch (err) {
+        console.error('Error loading cities:', err)
+      }
+    }
+    loadCities()
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const handleAdultsChange = (roomIndex: number, delta: number) => {
     const newRooms = [...searchParams.rooms]
@@ -133,7 +153,8 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
     console.log('[Search] Request start')
     
     try {
-      const results = await apiClient.searchHotels(searchPayload)
+      const response = await searchInventory(searchPayload)
+      const results = response?.hotels ?? []
       console.log('[Search] Request end - Results count:', results.length)
       onResultsFound(results)
       onSearch()
@@ -155,6 +176,9 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
         setIsCorsError(true)
       }
       
+      const message =
+        err instanceof Error && err.message ? err.message : t('search.errorMessage', language)
+      toast.error(message)
       setError(true)
     } finally {
       setIsLoading(false)

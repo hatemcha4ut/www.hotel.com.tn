@@ -9,6 +9,7 @@
  * No MyGo tokens are used or required from search-hotels response.
  */
 import { getSupabaseClient } from '@/lib/supabase'
+import { getMyGoErrorMessage } from '@/services/inventorySync'
 import type { GuestDetails, Hotel, Room, SearchParams } from '@/types'
 
 export interface GuestBookingPayload {
@@ -83,8 +84,11 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
   }
 
   const invokeCreateBooking = async (token: string) =>
-    supabase.functions.invoke<GuestBookingResponse>('create-booking', {
-      body: payload,
+    supabase.functions.invoke<GuestBookingResponse>('inventory-sync', {
+      body: {
+        action: 'booking',
+        ...payload,
+      },
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -93,7 +97,7 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
   try {
     console.log('Payload ready:', payload)
     const functionUrl = supabaseUrl
-      ? new URL('/functions/v1/create-booking', supabaseUrl).toString()
+      ? new URL('/functions/v1/inventory-sync', supabaseUrl).toString()
       : null
     console.log(
       'Supabase function URL:',
@@ -108,7 +112,7 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
       response = await invokeCreateBooking(retryToken)
     }
 
-    console.log('Raw create-booking response:', response)
+    console.log('Raw booking response:', response)
     const { data, error } = response
     if (!data && !error) {
       console.error(
@@ -122,6 +126,11 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
         throw new Error('Session expirée. Veuillez vous reconnecter et réessayer.')
       }
       throw new Error(error?.message || 'Impossible de créer la réservation.')
+    }
+
+    const myGoError = getMyGoErrorMessage(data)
+    if (myGoError) {
+      throw new Error(myGoError)
     }
 
     const paymentUrl = getPaymentUrl(data ?? null)

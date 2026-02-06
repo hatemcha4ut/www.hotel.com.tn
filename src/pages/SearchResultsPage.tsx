@@ -8,11 +8,13 @@ import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { ResultsList } from '@/components/ResultsList'
 import { FunnelSimple, ArrowLeft, MagnifyingGlass } from '@phosphor-icons/react'
-import { api } from '@/lib/api'
 import { Hotel, SortOption } from '@/types'
 import { useApp } from '@/contexts/AppContext'
+import { t } from '@/lib/translations'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { fetchHotelsByCity, searchInventory } from '@/services/inventorySync'
+import { toast } from 'sonner'
 
 interface SearchResultsPageProps {
   onViewHotel: (hotelId: string) => void
@@ -22,7 +24,7 @@ interface SearchResultsPageProps {
 }
 
 export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialResults }: SearchResultsPageProps) {
-  const { searchParams } = useApp()
+  const { searchParams, language } = useApp()
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [filteredHotels, setFilteredHotels] = useState<Hotel[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,18 +46,28 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
     const loadHotels = async () => {
       setLoading(true)
       try {
-        const results = await api.searchHotels({
-          cityId: searchParams.cityId,
-          hotelName: searchParams.hotelName,
-          checkIn: searchParams.checkIn ? format(searchParams.checkIn, 'yyyy-MM-dd') : undefined,
-          checkOut: searchParams.checkOut ? format(searchParams.checkOut, 'yyyy-MM-dd') : undefined,
-        })
+        let results: Hotel[] = []
+        // city mode lists hotels for the chosen destination; other modes use the inventory search.
+        if (searchParams.searchMode === 'city' && searchParams.cityId) {
+          results = await fetchHotelsByCity(searchParams.cityId)
+        } else {
+          const response = await searchInventory({
+            cityId: searchParams.cityId,
+            hotelName: searchParams.hotelName,
+            checkIn: searchParams.checkIn ? format(searchParams.checkIn, 'yyyy-MM-dd') : undefined,
+            checkOut: searchParams.checkOut ? format(searchParams.checkOut, 'yyyy-MM-dd') : undefined,
+          })
+          results = response?.hotels ?? []
+        }
         setHotels(results)
         setFilteredHotels(results)
         setPriceRange([0, 500])
         setSelectedStars([])
       } catch (error) {
         console.error('Error loading hotels:', error)
+        const message =
+          error instanceof Error ? error.message : t('search.errorMessage', language)
+        toast.error(message)
       } finally {
         setLoading(false)
       }
