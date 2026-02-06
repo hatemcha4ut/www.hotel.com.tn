@@ -21,8 +21,7 @@ const normalizeForSearch = (value: string | null | undefined) =>
     .trim()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\u2013\u2014]/g, ' ')
-    .replace(/[()]/g, ' ')
+    .replace(/[\u2013\u2014()]/g, ' ')
     .replace(/[^\p{L}\p{N}\s-]/gu, '')
     .replace(/\s+/g, ' ')
 

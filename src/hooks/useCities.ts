@@ -26,9 +26,9 @@ const mapCity = (city: InventoryCity): City | null => {
     return null
   }
   const fallbackId = [name, city.Region, city.Country?.Name]
-    .map((value) => encodeURIComponent(normalizeLabelValue(value)))
+    .map((value) => normalizeLabelValue(value))
     .filter(Boolean)
-    .join('|')
+    .join('::')
 
   return {
     id: city.Id !== null && city.Id !== undefined ? String(city.Id) : fallbackId,
@@ -76,9 +76,9 @@ export function useCities() {
         return
       }
 
-      const rawCities = Array.isArray(data.data?.cities) ? data.data?.cities : []
+      const fetchedCities = Array.isArray(data.data?.cities) ? data.data?.cities : []
       // Only keep cities with a name; region/country are optional and used for search/display.
-      const nextCities = rawCities.map(mapCity).filter((city): city is City => Boolean(city))
+      const nextCities = fetchedCities.map(mapCity).filter((city): city is City => Boolean(city))
       setCities(sortCities(nextCities))
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError : new Error('Unable to load cities.'))
