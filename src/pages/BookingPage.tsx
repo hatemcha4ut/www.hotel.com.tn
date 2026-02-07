@@ -282,6 +282,28 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="guestWhatsAppNumber">Numéro WhatsApp (optionnel)</Label>
+                    <Input
+                      id="guestWhatsAppNumber"
+                      type="tel"
+                      placeholder="+216 XX XXX XXX"
+                      value={guestDetails.guestWhatsAppNumber || ''}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        // Normalize WhatsApp number: ensure it starts with + and remove spaces/dashes
+                        const normalized = value.trim().replace(/[\s-]/g, '')
+                        setGuestDetails({ 
+                          ...guestDetails, 
+                          guestWhatsAppNumber: normalized.startsWith('+') ? normalized : value 
+                        })
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Format: +216XXXXXXXX
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="nationality">Nationalité *</Label>
                     <Select
                       value={guestDetails.nationality}

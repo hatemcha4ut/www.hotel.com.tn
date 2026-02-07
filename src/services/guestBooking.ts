@@ -79,6 +79,7 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
       email: bookingData.guestDetails.email,
       phone: `${bookingData.guestDetails.countryCode}${bookingData.guestDetails.phone}`,
     },
+    guest_whatsapp_number: bookingData.guestDetails.guestWhatsAppNumber,
     nights: bookingData.nights,
     totalAmount: bookingData.totalAmount,
   }
