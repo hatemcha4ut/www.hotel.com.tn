@@ -42,8 +42,12 @@ export const signIn = async (email: string, password: string) => {
 
 export const resetPassword = async (email: string) => {
   const supabase = getSupabaseClient()
+  // Use window.location.origin in browser, fallback to hardcoded URL for SSR or testing
+  const redirectUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/#/update-password`
+    : 'https://www.hotel.com.tn/#/update-password'
   return await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://www.hotel.com.tn/#/update-password',
+    redirectTo: redirectUrl,
   })
 }
 

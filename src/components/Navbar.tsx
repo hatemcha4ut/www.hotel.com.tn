@@ -68,8 +68,8 @@ export function Navbar() {
         toast.error('Erreur lors de la déconnexion')
       } else {
         toast.success('Déconnexion réussie')
+        // Navigate to home page using hash
         window.location.hash = ''
-        window.location.href = '/'
       }
     } catch (error) {
       console.error('Erreur lors de la déconnexion', error)

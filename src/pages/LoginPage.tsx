@@ -11,7 +11,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onNavigate }: LoginPageProps) {
-  const { signIn, user } = useAuth()
+  const { signIn } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
