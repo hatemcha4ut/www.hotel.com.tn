@@ -88,6 +88,7 @@ export interface GuestDetails {
   bookingForOther?: boolean
   guestFirstName?: string
   guestLastName?: string
+  guestWhatsAppNumber?: string
 }
 
 export interface Booking {

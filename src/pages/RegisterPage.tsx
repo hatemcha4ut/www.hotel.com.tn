@@ -116,9 +116,20 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                 type="tel"
                 placeholder="+216 XX XXX XXX"
                 value={formData.whatsappNumber}
-                onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Normalize WhatsApp number: ensure it starts with + and remove spaces/dashes
+                  const normalized = value.trim().replace(/[\s-]/g, '')
+                  setFormData({ 
+                    ...formData, 
+                    whatsappNumber: normalized.startsWith('+') ? normalized : value 
+                  })
+                }}
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground">
+                Format: +216XXXXXXXX
+              </p>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
