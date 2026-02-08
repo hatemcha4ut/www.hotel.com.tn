@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { CheckCircle, Download, Eye, Printer, Wallet, MagnifyingGlass } from '@phosphor-icons/react'
+import { Badge } from '@/components/ui/badge'
+import { CheckCircle, Download, Eye, Printer, Wallet, MagnifyingGlass, Clock, XCircle, Warning, ArrowClockwise } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -21,6 +22,84 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
   const [confirmationToken, setConfirmationToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [pollingEnabled, setPollingEnabled] = useState(true)
+
+  // Status display helpers
+  const getMyGoStateDisplay = (state?: string) => {
+    switch (state) {
+      case 'Validated':
+        return {
+          icon: <CheckCircle size={24} weight="fill" className="text-green-600" />,
+          label: 'Validée',
+          description: 'Votre réservation a été validée par l\'hôtel',
+          variant: 'default' as const,
+          className: 'bg-green-50 border-green-200 text-green-900'
+        }
+      case 'Cancelled':
+        return {
+          icon: <XCircle size={24} weight="fill" className="text-destructive" />,
+          label: 'Annulée',
+          description: 'Cette réservation a été annulée',
+          variant: 'destructive' as const,
+          className: 'bg-red-50 border-red-200 text-red-900'
+        }
+      case 'OnRequest':
+      default:
+        return {
+          icon: <Clock size={24} weight="fill" className="text-yellow-600" />,
+          label: 'En attente',
+          description: 'Votre réservation est en cours de traitement par l\'hôtel',
+          variant: 'secondary' as const,
+          className: 'bg-yellow-50 border-yellow-200 text-yellow-900'
+        }
+    }
+  }
+
+  const getPaymentStatusDisplay = (status?: string) => {
+    switch (status) {
+      case 'captured':
+        return {
+          icon: <CheckCircle size={24} weight="fill" className="text-green-600" />,
+          label: 'Paiement confirmé',
+          description: 'Le paiement a été confirmé avec succès',
+          variant: 'default' as const,
+          className: 'bg-green-50 border-green-200 text-green-900'
+        }
+      case 'preauth':
+        return {
+          icon: <Clock size={24} weight="fill" className="text-blue-600" />,
+          label: 'Pré-autorisation en cours',
+          description: 'Une pré-autorisation bancaire est en cours',
+          variant: 'secondary' as const,
+          className: 'bg-blue-50 border-blue-200 text-blue-900'
+        }
+      case 'reversed':
+        return {
+          icon: <ArrowClockwise size={24} weight="fill" className="text-orange-600" />,
+          label: 'Paiement annulé',
+          description: 'Le paiement a été annulé et remboursé',
+          variant: 'secondary' as const,
+          className: 'bg-orange-50 border-orange-200 text-orange-900'
+        }
+      case 'failed':
+        return {
+          icon: <XCircle size={24} weight="fill" className="text-destructive" />,
+          label: 'Échec du paiement',
+          description: 'Le paiement n\'a pas pu être traité',
+          variant: 'destructive' as const,
+          className: 'bg-red-50 border-red-200 text-red-900'
+        }
+      case 'pending':
+      default:
+        return {
+          icon: <Warning size={24} weight="fill" className="text-yellow-600" />,
+          label: 'Paiement en attente',
+          description: 'Le paiement est en cours de traitement',
+          variant: 'secondary' as const,
+          className: 'bg-yellow-50 border-yellow-200 text-yellow-900'
+        }
+    }
+  }
 
   const resolvedReference =
     bookingData?.reference ??
@@ -74,6 +153,34 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
     }
     loadBookingData()
   }, [reference])
+
+  // Polling for booking status updates
+  useEffect(() => {
+    if (!confirmationToken || !pollingEnabled || loadError) return
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const supabase = getSupabaseClient()
+        const { data, error } = await supabase.functions.invoke('get-confirmation', {
+          body: { confirmation_token: confirmationToken },
+        })
+        
+        if (!error && data) {
+          setBookingData(data)
+          
+          // Stop polling if booking is validated or cancelled
+          if (data.myGoState === 'Validated' || data.myGoState === 'Cancelled') {
+            setPollingEnabled(false)
+          }
+        }
+      } catch (error) {
+        console.error('Polling error:', error)
+        // Don't stop polling on temporary errors
+      }
+    }, 30000) // Poll every 30 seconds to minimize server load
+
+    return () => clearInterval(pollInterval)
+  }, [confirmationToken, pollingEnabled, loadError])
 
   const handleDownloadVoucher = () => {
     if (!resolvedReference) {
@@ -556,6 +663,44 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
               ? loadError
               : 'Votre réservation a été effectuée avec succès. Un email de confirmation a été envoyé.'}
           </p>
+
+          {!loadError && !isLoading && bookingData && (
+            <>
+              {/* myGO Status */}
+              {bookingData.myGoState && (
+                <div className={`mb-4 p-4 rounded-lg border-2 ${getMyGoStateDisplay(bookingData.myGoState).className}`}>
+                  <div className="flex items-center gap-3">
+                    {getMyGoStateDisplay(bookingData.myGoState).icon}
+                    <div className="text-left flex-1">
+                      <div className="font-semibold text-sm">
+                        Statut de réservation: {getMyGoStateDisplay(bookingData.myGoState).label}
+                      </div>
+                      <div className="text-xs mt-1">
+                        {getMyGoStateDisplay(bookingData.myGoState).description}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Status */}
+              {bookingData.paymentStatus && (
+                <div className={`mb-4 p-4 rounded-lg border-2 ${getPaymentStatusDisplay(bookingData.paymentStatus).className}`}>
+                  <div className="flex items-center gap-3">
+                    {getPaymentStatusDisplay(bookingData.paymentStatus).icon}
+                    <div className="text-left flex-1">
+                      <div className="font-semibold text-sm">
+                        {getPaymentStatusDisplay(bookingData.paymentStatus).label}
+                      </div>
+                      <div className="text-xs mt-1">
+                        {getPaymentStatusDisplay(bookingData.paymentStatus).description}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           <div className="bg-muted rounded-lg p-6 mb-8">
             <div className="text-sm text-muted-foreground mb-2">Référence de réservation</div>

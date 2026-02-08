@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '@/lib/supabase'
-import type { City, Hotel } from '@/types'
+import type { City, Hotel, PrebookResponse, CheckoutInitiateResponse } from '@/types'
 
 type InventorySyncPayload = Record<string, unknown>
 
@@ -125,3 +125,59 @@ export const bookInventory = async <T>(
     },
     headers
   )
+
+export const prebookRoom = async (
+  payload: InventorySyncPayload
+): Promise<PrebookResponse> => {
+  try {
+    const data = await invokeInventorySyncAction<PrebookResponse>({
+      action: 'prebook',
+      ...payload,
+    })
+    
+    if (data && typeof data === 'object') {
+      return data
+    }
+    
+    return {
+      success: false,
+      confirmedPrice: 0,
+      cancellationPolicy: '',
+      error: 'Prebook response missing required fields or has unexpected format',
+    }
+  } catch (error) {
+    console.error('[Inventory] Prebook error:', error)
+    return {
+      success: false,
+      confirmedPrice: 0,
+      cancellationPolicy: '',
+      error: error instanceof Error ? error.message : 'Prebook failed',
+    }
+  }
+}
+
+export const initiateCheckout = async (
+  payload: InventorySyncPayload
+): Promise<CheckoutInitiateResponse> => {
+  try {
+    const data = await invokeInventorySyncAction<CheckoutInitiateResponse>({
+      action: 'checkout-initiate',
+      ...payload,
+    })
+    
+    if (data && typeof data === 'object') {
+      return data
+    }
+    
+    return {
+      blocked: false,
+      reason: 'Checkout response missing required fields or has unexpected format',
+    }
+  } catch (error) {
+    console.error('[Inventory] Checkout initiate error:', error)
+    return {
+      blocked: true,
+      reason: error instanceof Error ? error.message : 'Checkout initiation failed',
+    }
+  }
+}

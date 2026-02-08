@@ -70,6 +70,7 @@ export interface Room {
   boardingOptions?: { type: string; pricePerNight: number; totalPrice: number }[]
   amenities: string[]
   cancellationPolicy: string
+  cancellationDeadline?: string  // ISO date
   pricePerNight: number
   totalPrice: number
   image: string
@@ -89,6 +90,7 @@ export interface GuestDetails {
   guestFirstName?: string
   guestLastName?: string
   guestWhatsAppNumber?: string
+  whatsappConsent?: boolean
 }
 
 export interface Booking {
@@ -101,6 +103,8 @@ export interface Booking {
   guests: GuestDetails
   totalPrice: number
   status: 'confirmed' | 'pending' | 'cancelled'
+  myGoState?: 'OnRequest' | 'Validated' | 'Cancelled'
+  paymentStatus?: 'preauth' | 'captured' | 'reversed' | 'failed' | 'pending'
   createdAt: string
 }
 
@@ -125,3 +129,30 @@ export interface FilterOptions {
 
 export type SortOption = 'price-asc' | 'price-desc' | 'stars' | 'rating' | 'distance'
 export type Language = 'fr' | 'en' | 'ar'
+
+export interface BookingListItem {
+  id: string
+  date: string
+  client: string
+  hotel: string
+  amount: string
+  status: string
+}
+
+export interface PrebookResponse {
+  success: boolean
+  confirmedPrice: number
+  cancellationPolicy: string
+  cancellationDeadline?: string
+  notRefundable?: boolean
+  error?: string
+}
+
+export interface CheckoutInitiateResponse {
+  blocked: boolean
+  reason?: string
+  formUrl?: string
+  preauth?: boolean
+  bookingId?: string
+  orderId?: string
+}

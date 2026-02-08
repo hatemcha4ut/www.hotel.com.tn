@@ -42,7 +42,9 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
     countryCode: '+216',
     nationality: 'TN',
     specialRequests: '',
+    whatsappConsent: false,
   })
+  const [whatsappError, setWhatsappError] = useState<string>('')
   const [roomBoardings, setRoomBoardings] = useState<Record<number, string>>(() => {
     const initial: Record<number, string> = {}
     bookingRooms.forEach((r, idx) => {
@@ -56,6 +58,31 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const currentUser = useAuthUser()
   const [isGuestMode, setIsGuestMode] = useState(false)
+  
+  // E.164 WhatsApp validation
+  const validateWhatsApp = (number: string): boolean => {
+    if (!number || number.trim() === '') return true // Optional field
+    const e164Regex = /^\+[1-9]\d{1,14}$/
+    return e164Regex.test(number)
+  }
+  
+  const handleWhatsAppChange = (value: string) => {
+    const normalized = value.trim().replace(/[\s-]/g, '')
+    const finalValue = normalized.startsWith('+') ? normalized : value
+    
+    setGuestDetails({ 
+      ...guestDetails, 
+      guestWhatsAppNumber: finalValue 
+    })
+    
+    // Validate if not empty
+    if (finalValue && !validateWhatsApp(finalValue)) {
+      setWhatsappError('Format invalide. Le numéro doit commencer par + suivi du code pays. Exemple: +21612345678')
+    } else {
+      setWhatsappError('')
+    }
+  }
+  
   const handleSubmit = async () => {
     setProcessing(true)
     try {
@@ -288,19 +315,29 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
                       type="tel"
                       placeholder="+216 XX XXX XXX"
                       value={guestDetails.guestWhatsAppNumber || ''}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        // Normalize WhatsApp number: ensure it starts with + and remove spaces/dashes
-                        const normalized = value.trim().replace(/[\s-]/g, '')
-                        setGuestDetails({ 
-                          ...guestDetails, 
-                          guestWhatsAppNumber: normalized.startsWith('+') ? normalized : value 
-                        })
-                      }}
+                      onChange={(e) => handleWhatsAppChange(e.target.value)}
+                      className={whatsappError ? 'border-destructive' : ''}
                     />
+                    {whatsappError && (
+                      <p className="text-xs text-destructive">{whatsappError}</p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       Format: +216XXXXXXXX
                     </p>
+                    {guestDetails.guestWhatsAppNumber && (
+                      <div className="flex items-center space-x-2 pt-2">
+                        <Checkbox
+                          id="whatsappConsent"
+                          checked={guestDetails.whatsappConsent || false}
+                          onCheckedChange={(checked) =>
+                            setGuestDetails({ ...guestDetails, whatsappConsent: checked as boolean })
+                          }
+                        />
+                        <Label htmlFor="whatsappConsent" className="text-sm font-normal cursor-pointer">
+                          J'accepte d'être contacté(e) par WhatsApp concernant ma réservation
+                        </Label>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

@@ -5,9 +5,45 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { getBookingList, type BookingListItem } from '@/services/hotelService'
+import type { BookingListItem } from '@/types'
 
 const ADMIN_PASSWORD = 'admin123'
+
+// Mock data - replace with backend API call in production
+const getMockBookingList = (): BookingListItem[] => [
+  {
+    id: '1',
+    date: '02/02/2026',
+    client: 'Amira Ben Ali',
+    hotel: 'Hôtel La Badira',
+    amount: '820 TND',
+    status: 'Confirmé',
+  },
+  {
+    id: '2',
+    date: '01/02/2026',
+    client: 'Youssef Mansour',
+    hotel: 'Mövenpick Resort & Marine Spa',
+    amount: '1 120 TND',
+    status: 'En attente',
+  },
+  {
+    id: '3',
+    date: '31/01/2026',
+    client: 'Sarra Mejri',
+    hotel: 'The Residence Tunis',
+    amount: '1 540 TND',
+    status: 'Confirmé',
+  },
+  {
+    id: '4',
+    date: '30/01/2026',
+    client: 'Karim Bessa',
+    hotel: 'Radisson Blu Palace Resort',
+    amount: '980 TND',
+    status: 'Annulé',
+  },
+]
 
 export function AdminDashboard() {
   const [password, setPassword] = useState('')
@@ -28,7 +64,9 @@ export function AdminDashboard() {
     setLoading(true)
 
     try {
-      const data = await getBookingList()
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500))
+      const data = getMockBookingList()
       setBookings(data)
     } catch (fetchError) {
       console.error('Erreur lors du chargement des réservations.', fetchError)
