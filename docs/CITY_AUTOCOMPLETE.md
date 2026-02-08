@@ -390,8 +390,6 @@ We proxy all myGO API calls through Supabase Edge Functions instead of making di
 1. **No pagination**: All cities loaded at once (acceptable for ~100 cities)
 2. **No server-side search**: Filtering happens client-side
 3. **No fuzzy matching**: Exact substring match only
-4. **Single language**: French only for loading/error messages
-5. **No offline mode**: Requires network for initial fetch
 
 ## Troubleshooting
 

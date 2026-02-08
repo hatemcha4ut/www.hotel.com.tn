@@ -1,8 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { City } from '@/types'
+import { City, Language } from '@/types'
 import { tunisianCities } from '@/constants/cities'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/translations'
 
 // Allow click events to fire before closing the dropdown.
 const BLUR_DELAY_MS = 100
@@ -16,6 +17,7 @@ interface CityAutocompleteProps {
   isLoading?: boolean
   error?: Error | null
   onRetry?: () => void
+  language?: Language
 }
 
 const normalizeForSearch = (value: string | null | undefined) =>
@@ -59,6 +61,7 @@ export function CityAutocomplete({
   isLoading = false,
   error = null,
   onRetry,
+  language = 'fr',
 }: CityAutocompleteProps) {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
@@ -210,7 +213,7 @@ export function CityAutocomplete({
         <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-popover py-3 px-3 text-sm shadow-lg">
           <div className="flex items-center justify-center text-muted-foreground">
             <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-            Chargement des villes...
+            {t('cityAutocomplete.loading', language)}
           </div>
         </div>
       )}
@@ -252,7 +255,7 @@ export function CityAutocomplete({
               onClick={onRetry}
               className="mt-1 text-xs text-destructive underline hover:no-underline"
             >
-              Réessayer
+              {t('cityAutocomplete.retry', language)}
             </button>
           )}
         </div>

@@ -207,6 +207,7 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
               isLoading={citiesLoading}
               error={citiesError}
               onRetry={retryCities}
+              language={language}
             />
           </div>
         ) : (

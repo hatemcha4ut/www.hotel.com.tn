@@ -39,7 +39,9 @@ export function useCities() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+  }, [load])
 
   return { cities, isLoading, error, retry: () => load(true) }
 }

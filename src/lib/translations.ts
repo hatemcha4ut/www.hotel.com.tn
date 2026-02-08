@@ -29,6 +29,8 @@ type TranslationKey =
   | 'search.errorMessage'
   | 'search.validationWarning'
   | 'search.devCountsLabel'
+  | 'cityAutocomplete.loading'
+  | 'cityAutocomplete.retry'
   | 'common.from'
   | 'common.perNight'
   | 'common.viewDetails'
@@ -69,6 +71,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.errorMessage': 'Une erreur est survenue. Veuillez réessayer.',
     'search.validationWarning': 'Veuillez sélectionner une ville.',
     'search.devCountsLabel': 'Hôtels trouvés',
+    'cityAutocomplete.loading': 'Chargement des villes...',
+    'cityAutocomplete.retry': 'Réessayer',
     'common.from': 'À partir de',
     'common.perNight': 'par nuit',
     'common.viewDetails': 'Voir les détails',
@@ -108,6 +112,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.errorMessage': 'Something went wrong. Please try again.',
     'search.validationWarning': 'Please select a city.',
     'search.devCountsLabel': 'Hotels found',
+    'cityAutocomplete.loading': 'Loading cities...',
+    'cityAutocomplete.retry': 'Retry',
     'common.from': 'From',
     'common.perNight': 'per night',
     'common.viewDetails': 'View Details',
@@ -147,6 +153,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'search.errorMessage': 'حدث خطأ. يرجى المحاولة مرة أخرى.',
     'search.validationWarning': 'يرجى اختيار مدينة.',
     'search.devCountsLabel': 'الفنادق التي تم العثور عليها',
+    'cityAutocomplete.loading': 'جارٍ تحميل المدن...',
+    'cityAutocomplete.retry': 'إعادة المحاولة',
     'common.from': 'ابتداءً من',
     'common.perNight': 'لكل ليلة',
     'common.viewDetails': 'عرض التفاصيل',
