@@ -275,9 +275,10 @@ Shows payment processing state:
 | `failed` | ✗ Red | Échec | Paiement non traité |
 
 **Polling**:
-- Auto-refresh every 10 seconds
+- Auto-refresh every 30 seconds (optimized for server load)
 - Stops when `myGoState` is `Validated` or `Cancelled`
 - Updates UI in real-time
+- Does not stop on temporary network errors
 
 **Voucher Actions**:
 - View voucher (modal)

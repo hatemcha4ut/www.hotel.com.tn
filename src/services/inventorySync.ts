@@ -143,7 +143,7 @@ export const prebookRoom = async (
       success: false,
       confirmedPrice: 0,
       cancellationPolicy: '',
-      error: 'Invalid prebook response',
+      error: 'Prebook response missing required fields or has unexpected format',
     }
   } catch (error) {
     console.error('[Inventory] Prebook error:', error)
@@ -171,7 +171,7 @@ export const initiateCheckout = async (
     
     return {
       blocked: false,
-      reason: 'Invalid checkout response',
+      reason: 'Checkout response missing required fields or has unexpected format',
     }
   } catch (error) {
     console.error('[Inventory] Checkout initiate error:', error)

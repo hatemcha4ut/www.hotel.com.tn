@@ -77,7 +77,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
     
     // Validate if not empty
     if (finalValue && !validateWhatsApp(finalValue)) {
-      setWhatsappError('Format invalide. Exemple: +21612345678')
+      setWhatsappError('Format invalide. Le numéro doit commencer par + suivi du code pays. Exemple: +21612345678')
     } else {
       setWhatsappError('')
     }

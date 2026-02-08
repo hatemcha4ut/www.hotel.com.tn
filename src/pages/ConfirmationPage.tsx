@@ -177,7 +177,7 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
         console.error('Polling error:', error)
         // Don't stop polling on temporary errors
       }
-    }, 10000) // Poll every 10 seconds
+    }, 30000) // Poll every 30 seconds (reduced from 10s to minimize server load)
 
     return () => clearInterval(pollInterval)
   }, [confirmationToken, pollingEnabled, loadError])
