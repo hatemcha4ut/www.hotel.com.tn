@@ -77,7 +77,10 @@ export const generatePaymentParams = (orderId: string, amount: number) => {
   const password = import.meta.env.VITE_CTP_PASSWORD
   
   if (!password) {
-    throw new Error('Payment generation must be done server-side. Use checkout-initiate endpoint.')
+    throw new Error(
+      'Payment generation must be done server-side. Use checkout-initiate endpoint. ' +
+      'See docs/FRONTEND_WIZARD.md for integration details.'
+    )
   }
   
   console.warn(
