@@ -10,7 +10,7 @@ export const supabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 export const missingSupabaseVars = [
   supabaseUrl ? null : 'VITE_SUPABASE_URL',
   supabaseAnonKey ? null : 'VITE_SUPABASE_ANON_KEY',
-].filter((v): v is string => Boolean(v))
+].filter((value): value is string => Boolean(value))
 
 let supabaseClient: SupabaseClient | null = null
 

@@ -10,6 +10,7 @@
  */
 import { getSupabaseClient } from '@/lib/supabase'
 import { getMyGoErrorMessage } from '@/services/inventorySync'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { GuestDetails, Hotel, Room, SearchParams } from '@/types'
 
 export interface GuestBookingPayload {
@@ -33,10 +34,7 @@ interface GuestBookingResponse {
 const getPaymentUrl = (payload: GuestBookingResponse | null) =>
   payload?.paymentUrl ?? payload?.payment_url
 
-const ensureSession = async (supabase: ReturnType<typeof getSupabaseClient>) => {
-  if (!supabase) {
-    throw new Error('Service non disponible. Configuration manquante.')
-  }
+const ensureSession = async (supabase: SupabaseClient) => {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
 
   if (sessionError) {
