@@ -1,10 +1,7 @@
 import { Hotel, City, Room } from '@/types'
 
-const API_BASE = 'https://admin.mygo.co/api/hotel/'
-const API_LOGIN = 'XMLAMC'
-const API_PASSWORD = '-G9hkxDSXXYUtwcx73H6'
-
-const authHeader = 'Basic ' + btoa(`${API_LOGIN}:${API_PASSWORD}`)
+// Note: API calls should go through Supabase Edge Functions for security
+// Direct API calls with credentials are removed to prevent credential exposure
 
 const mockCities: City[] = [
   { id: '1', name: 'Tunis', country: 'Tunisia' },

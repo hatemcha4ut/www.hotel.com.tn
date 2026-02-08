@@ -125,3 +125,12 @@ export interface FilterOptions {
 
 export type SortOption = 'price-asc' | 'price-desc' | 'stars' | 'rating' | 'distance'
 export type Language = 'fr' | 'en' | 'ar'
+
+export interface BookingListItem {
+  id: string
+  date: string
+  client: string
+  hotel: string
+  amount: string
+  status: string
+}
