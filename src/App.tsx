@@ -46,8 +46,24 @@ function App() {
     if (lowerHash === '#/register' || lowerHash === '#register') return 'register'
     if (lowerHash === '#/forgot-password' || lowerHash === '#forgot-password') return 'forgot-password'
     if (lowerHash === '#/update-password' || lowerHash === '#update-password') return 'update-password'
+    if (lowerHash === '#/search' || lowerHash === '#search') return 'search'
+    if (lowerHash === '#/booking' || lowerHash === '#booking') return 'booking'
+    if (lowerHash === '#/confirmation' || lowerHash === '#confirmation') return 'confirmation'
+    if (lowerHash === '#/contact' || lowerHash === '#contact') return 'contact'
+    if (lowerHash === '#/terms' || lowerHash === '#terms') return 'terms'
+    if (lowerHash === '#/privacy' || lowerHash === '#privacy') return 'privacy'
+    // Check for hotel detail page with ID
+    if (lowerHash.startsWith('#/hotel/') || lowerHash.startsWith('#hotel/')) {
+      return 'hotel'
+    }
     return null
   }, [isAdminHash])
+
+  // Helper function to extract hotel ID from hash
+  const getHotelIdFromHash = useCallback((hash: string): string | null => {
+    const match = hash.match(/^#\/?hotel\/(.+)$/i)
+    return match ? match[1] : null
+  }, [])
 
   // Helper function to sync page state with URL hash
   const syncPageWithHash = useCallback(() => {
@@ -55,17 +71,19 @@ function App() {
     const pageFromHash = getPageFromHash(hash)
     if (pageFromHash) {
       setCurrentPage(pageFromHash)
-    } else {
-      // If hash is cleared/changed to non-special page, update accordingly
-      setCurrentPage((prevPage) => {
-        const prevPageHash = getPageFromHash('#/' + prevPage)
-        if (prevPageHash && !getPageFromHash(hash)) {
-          return 'home'
+      
+      // If it's a hotel page, extract and set the hotel ID
+      if (pageFromHash === 'hotel') {
+        const hotelId = getHotelIdFromHash(hash)
+        if (hotelId) {
+          setSelectedHotelId(hotelId)
         }
-        return prevPage
-      })
+      }
+    } else if (!hash || hash === '#' || hash === '#/') {
+      // Empty hash means home page
+      setCurrentPage('home')
     }
-  }, [getPageFromHash])
+  }, [getPageFromHash, getHotelIdFromHash])
 
   // Set up hash-based navigation on mount and listen for hash changes
   useEffect(() => {
@@ -85,41 +103,47 @@ function App() {
   }, [syncPageWithHash])
 
   const handleSearch = () => {
-    setCurrentPage('search')
+    window.location.hash = '/search'
+    window.scrollTo(0, 0)
   }
 
   const handleViewHotel = (hotelId: string) => {
     setSelectedHotelId(hotelId)
-    setCurrentPage('hotel')
+    window.location.hash = '/hotel/' + hotelId
+    window.scrollTo(0, 0)
   }
 
   const handleBookRoom = (hotel: Hotel, room: Room) => {
     setSelectedHotel(hotel)
     setSelectedRoom(room)
     setSelectedRooms([room])
-    setCurrentPage('booking')
+    window.location.hash = '/booking'
+    window.scrollTo(0, 0)
   }
   
   const handleBookRooms = (hotel: Hotel, rooms: Room[]) => {
     setSelectedHotel(hotel)
     setSelectedRooms(rooms)
     setSelectedRoom(rooms[0])
-    setCurrentPage('booking')
+    window.location.hash = '/booking'
+    window.scrollTo(0, 0)
   }
 
   const handleBookingComplete = (reference: string) => {
     setBookingReference(reference)
-    setCurrentPage('confirmation')
+    window.location.hash = '/confirmation'
+    window.scrollTo(0, 0)
   }
 
   const resetSearchState = () => {
-    setCurrentPage('home')
     setSelectedHotelId('')
     setSelectedHotel(null)
     setSelectedRoom(null)
     setSelectedRooms([])
     setBookingReference('')
     setSearchResults(null)
+    window.location.hash = ''
+    window.scrollTo(0, 0)
   }
 
   const handleBackToHome = () => {
@@ -131,21 +155,13 @@ function App() {
   }
 
   const handleNavigateToPage = (page: string) => {
-    const specialPages: Page[] = ['admin', 'login', 'register', 'forgot-password', 'update-password']
-    
-    if (specialPages.includes(page as Page)) {
-      // For special pages, set the hash (hashchange event will update state)
-      window.location.hash = '/' + page
+    // All pages now use hash-based routing
+    if (page === 'home') {
+      window.location.hash = ''
     } else {
-      // When navigating away from special pages, clear the hash and set state directly
-      const currentHash = window.location.hash
-      if (getPageFromHash(currentHash)) {
-        // Clear the hash first
-        window.location.hash = ''
-      }
-      // Always set the page state for non-special pages
-      setCurrentPage(page as Page)
+      window.location.hash = '/' + page
     }
+    window.scrollTo(0, 0)
   }
 
   return (
