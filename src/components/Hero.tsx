@@ -27,7 +27,7 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(false)
   const [isCorsError, setIsCorsError] = useState(false)
-  const { cities, isLoading: citiesLoading, error: citiesError, retry: retryCities } = useCities()
+  const { cities, isLoading: citiesLoading, error: citiesError, retry: retryCities, usingFallback } = useCities()
 
   const handleAdultsChange = (roomIndex: number, delta: number) => {
     const newRooms = [...searchParams.rooms]
@@ -214,6 +214,7 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
             error={citiesError}
             onRetry={retryCities}
             language={language}
+            usingFallback={usingFallback}
           />
         </div>
 

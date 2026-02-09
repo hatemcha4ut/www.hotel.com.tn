@@ -6,8 +6,19 @@ These must be configured in **Settings → Secrets and variables → Actions** f
 
 | Secret Name | Description | Example |
 |---|---|---|
-| `VITE_SUPABASE_URL` | Supabase project URL | `https://xxxxx.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous/public key | `eyJhbGciOiJIUzI1NiIs...` |
+| `VITE_SUPABASE_URL` | Supabase project URL (required for Edge Functions) | `https://xxxxx.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous/public key (required for Edge Functions) | `eyJhbGciOiJIUzI1NiIs...` |
+
+**Edge Function Dependencies**: These environment variables are required for the following features:
+- Dynamic cities loading (`fetchCities`)
+- Hotels by city (`fetchHotelsByCity`)
+- Hotel search (`searchInventory`)
+- Booking operations (`bookInventory`, `prebookRoom`, `initiateCheckout`)
+
+Without proper configuration, the app will:
+- Automatically retry fetching cities with exponential backoff (3 attempts)
+- Fall back to a static list of Tunisian cities
+- Display minimal error messages to users only when using fallback data
 
 ## How Vite env injection works
 

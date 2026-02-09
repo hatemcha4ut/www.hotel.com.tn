@@ -70,12 +70,24 @@ const invokeInventorySyncAction = async <T>(
 }
 
 export const fetchCities = async (): Promise<City[]> => {
-  const data = await invokeInventorySyncAction<InventorySyncCitiesResponse>({ action: 'cities' })
-  const cities = data?.cities ?? []
-  if (import.meta.env.DEV) {
-    console.log(`[Inventory] cities loaded: ${cities.length}`)
+  try {
+    const data = await invokeInventorySyncAction<InventorySyncCitiesResponse>({ action: 'cities' })
+    const cities = data?.cities ?? []
+    if (import.meta.env.DEV) {
+      console.log(`[Inventory] cities loaded: ${cities.length}`)
+    }
+    return cities
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error('[Inventory] Failed to fetch cities:', {
+        message: error instanceof Error ? error.message : String(error),
+        error,
+        timestamp: new Date().toISOString(),
+        hint: 'Check that VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set correctly',
+      })
+    }
+    throw error
   }
-  return cities
 }
 
 export const fetchHotelsByCity = async (cityId: string): Promise<Hotel[]> => {
