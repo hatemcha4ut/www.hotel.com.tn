@@ -90,6 +90,7 @@ export function AdminDashboard() {
           setBookings([])
         } else if (data) {
           // Transform Supabase data to BookingListItem format
+          // mygo_state represents the booking state from the MyGo API (OnRequest/Validated/Cancelled)
           const formattedBookings: BookingListItem[] = data.map((booking) => ({
             id: booking.id,
             date: new Date(booking.created_at).toLocaleDateString('fr-FR'),

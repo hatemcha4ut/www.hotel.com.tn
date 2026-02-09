@@ -82,6 +82,9 @@ function App() {
     } else if (!hash || hash === '#' || hash === '#/') {
       // Empty hash means home page
       setCurrentPage('home')
+    } else {
+      // Invalid hash - redirect to home
+      setCurrentPage('home')
     }
   }, [getPageFromHash, getHotelIdFromHash])
 
