@@ -135,7 +135,11 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
     
     try {
       const response = await fetchSearchHotels(searchPayload)
-      const results = mapSearchHotelsToList(response.hotels)
+      let results = mapSearchHotelsToList(response.hotels)
+      if (searchParams.searchMode === 'hotel' && searchParams.hotelName) {
+        const needle = searchParams.hotelName.toLowerCase().trim()
+        results = results.filter((h) => h.name.toLowerCase().includes(needle))
+      }
       console.log('[Search] Request end - Results count:', results.length)
       onResultsFound({
         hotels: results,
@@ -181,14 +185,14 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
       <div className="flex items-center gap-2 mb-6">
         <Button
           variant={searchParams.searchMode === 'city' ? 'default' : 'outline'}
-          onClick={() => setSearchParams({ ...searchParams, searchMode: 'city', hotelName: undefined })}
+          onClick={() => setSearchParams({ ...searchParams, searchMode: 'city', hotelName: '' })}
           className="flex-1"
         >
           {t('search.searchByCity', language)}
         </Button>
         <Button
           variant={searchParams.searchMode === 'hotel' ? 'default' : 'outline'}
-          onClick={() => setSearchParams({ ...searchParams, searchMode: 'hotel', cityId: undefined })}
+          onClick={() => setSearchParams({ ...searchParams, searchMode: 'hotel' })}
           className="flex-1"
         >
           {t('search.searchByHotel', language)}
@@ -196,21 +200,21 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {searchParams.searchMode === 'city' ? (
-          <div className="space-y-2">
-            <Label>{t('search.selectCity', language)}</Label>
-            <CityAutocomplete
-              selectedCityId={searchParams.cityId}
-              placeholder={t('search.selectCity', language)}
-              cities={cities}
-              onSelect={(value) => setSearchParams({ ...searchParams, cityId: value })}
-              isLoading={citiesLoading}
-              error={citiesError}
-              onRetry={retryCities}
-              language={language}
-            />
-          </div>
-        ) : (
+        <div className="space-y-2">
+          <Label>{t('search.selectCity', language)}</Label>
+          <CityAutocomplete
+            selectedCityId={searchParams.cityId}
+            placeholder={t('search.selectCity', language)}
+            cities={cities}
+            onSelect={(value) => setSearchParams({ ...searchParams, cityId: value })}
+            isLoading={citiesLoading}
+            error={citiesError}
+            onRetry={retryCities}
+            language={language}
+          />
+        </div>
+
+        {searchParams.searchMode === 'hotel' && (
           <div className="space-y-2">
             <Label>{t('search.hotelName', language)}</Label>
             <Input
