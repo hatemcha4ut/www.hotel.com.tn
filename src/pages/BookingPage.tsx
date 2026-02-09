@@ -111,7 +111,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la réservation'
       setBookingError(errorMessage)
-      toast.error(errorMessage)
+      // Don't show duplicate toast when retry button exists
     } finally {
       setProcessing(false)
     }

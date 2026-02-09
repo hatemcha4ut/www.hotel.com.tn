@@ -164,12 +164,14 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
       if (corsDetected) {
         console.log('[Search] CORS blocked: use server proxy')
         setIsCorsError(true)
+        toast.error(errorMessage)
+        setError(true)
+      } else {
+        // Use user-friendly error messages for Edge Function errors
+        const message = getUserFriendlyErrorMessage(err, 'search')
+        toast.error(message)
+        setError(true)
       }
-      
-      // Use user-friendly error messages for Edge Function errors
-      const message = getUserFriendlyErrorMessage(err, 'search')
-      toast.error(message)
-      setError(true)
     } finally {
       setIsLoading(false)
     }

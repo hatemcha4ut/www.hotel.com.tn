@@ -32,7 +32,7 @@ export function useCities() {
       setCities(results)
     } catch (err) {
       const errorMessage = getUserFriendlyErrorMessage(err, 'cities')
-      setError(err instanceof Error ? new Error(errorMessage) : new Error(errorMessage))
+      setError(new Error(errorMessage))
       fetchPromise = null
       // Fallback to static tunisianCities from constants
       setCities(tunisianCities)
