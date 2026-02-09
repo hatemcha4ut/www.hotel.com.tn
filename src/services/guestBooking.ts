@@ -10,6 +10,7 @@
  */
 import { getSupabaseClient } from '@/lib/supabase'
 import { getMyGoErrorMessage } from '@/services/inventorySync'
+import { getUserFriendlyErrorMessage } from '@/lib/edgeFunctionErrors'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { GuestDetails, Hotel, Room, SearchParams } from '@/types'
 
@@ -131,7 +132,8 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
       if (error.status === 401 || error.status === 403) {
         throw new Error('Session expirée. Veuillez vous reconnecter et réessayer.')
       }
-      throw new Error(error?.message || 'Impossible de créer la réservation.')
+      // Use user-friendly error message for Edge Function errors
+      throw new Error(getUserFriendlyErrorMessage(error, 'booking'))
     }
 
     const myGoError = getMyGoErrorMessage(data)

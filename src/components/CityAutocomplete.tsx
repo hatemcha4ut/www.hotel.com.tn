@@ -1,9 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { City, Language } from '@/types'
 import { tunisianCities } from '@/constants/cities'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/translations'
+import { Info } from '@phosphor-icons/react'
 
 // Allow click events to fire before closing the dropdown.
 const BLUR_DELAY_MS = 100
@@ -246,17 +248,27 @@ export function CityAutocomplete({
         </ul>
       )}
       {error && (
-        <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
-          <p className="text-xs text-destructive">
-            {error.message}
-          </p>
+        <div className="mt-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+          <div className="flex items-start gap-2">
+            <Info size={16} className="text-destructive mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs text-destructive font-medium">
+                {error.message}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Villes par défaut affichées
+              </p>
+            </div>
+          </div>
           {onRetry && (
-            <button
+            <Button
               onClick={onRetry}
-              className="mt-1 text-xs text-destructive underline hover:no-underline"
+              variant="outline"
+              size="sm"
+              className="mt-2 w-full"
             >
               {t('cityAutocomplete.retry', language)}
-            </button>
+            </Button>
           )}
         </div>
       )}

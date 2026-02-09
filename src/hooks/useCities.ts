@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { fetchCities } from '@/services/inventorySync'
 import { tunisianCities } from '@/constants/cities'
 import type { City } from '@/types'
+import { getUserFriendlyErrorMessage } from '@/lib/edgeFunctionErrors'
 
 // Module-level cache so data survives re-mounts
 let cachedCities: City[] | null = null
@@ -30,7 +31,8 @@ export function useCities() {
       fetchPromise = null
       setCities(results)
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load cities'))
+      const errorMessage = getUserFriendlyErrorMessage(err, 'cities')
+      setError(new Error(errorMessage))
       fetchPromise = null
       // Fallback to static tunisianCities from constants
       setCities(tunisianCities)

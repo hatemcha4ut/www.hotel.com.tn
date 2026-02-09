@@ -15,6 +15,7 @@ import { useCities } from '@/hooks/useCities'
 import { buildSearchRequest, fetchSearchHotels, mapSearchHotelsToList } from '@/services/searchHotels'
 import type { SearchHotelsResult } from '@/services/searchHotels'
 import { toast } from 'sonner'
+import { getUserFriendlyErrorMessage } from '@/lib/edgeFunctionErrors'
 
 interface SearchWidgetProps {
   onSearch: () => void
@@ -163,12 +164,14 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
       if (corsDetected) {
         console.log('[Search] CORS blocked: use server proxy')
         setIsCorsError(true)
+        toast.error(errorMessage)
+        setError(true)
+      } else {
+        // Use user-friendly error messages for Edge Function errors
+        const message = getUserFriendlyErrorMessage(err, 'search')
+        toast.error(message)
+        setError(true)
       }
-      
-      const message =
-        err instanceof Error && err.message ? err.message : t('search.errorMessage', language)
-      toast.error(message)
-      setError(true)
     } finally {
       setIsLoading(false)
     }
@@ -399,6 +402,14 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
               CORS blocked: use server proxy
             </p>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSearch}
+            className="mt-2"
+          >
+            {t('cityAutocomplete.retry', language)}
+          </Button>
         </div>
       )}
     </Card>
