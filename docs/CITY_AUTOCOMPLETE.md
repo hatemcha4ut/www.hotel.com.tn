@@ -45,8 +45,32 @@ The city autocomplete system provides a reusable, performant, and user-friendly 
 │           │                                                               │
 └───────────┼───────────────────────────────────────────────────────────┘
             │
-            │ Supabase Edge Function
+            │ HTTPS GET
             ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                    Public API (Cloudflare Worker)                         │
+│                                                                            │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  https://api.hotel.com.tn/static/cities                          │  │
+│  │  Returns: { items: City[], source, cached, fetchedAt }           │  │
+│  │  Headers: ETag, Cache-Control                                     │  │
+│  └──────────────────────┬───────────────────────────────────────────┘  │
+│                         │                                                 │
+└─────────────────────────┼─────────────────────────────────────────────┘
+                          │
+                          │ myGO API call
+                          ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                         myGO API Server                                   │
+│                                                                            │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  ListCity API Endpoint                                            │  │
+│  │  Returns: City[]                                                  │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────┘
+
+                          Fallback Path (if public API fails)
+                          
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                         Supabase Edge Functions                           │
 │                                                                            │
@@ -237,12 +261,26 @@ If not → fetchCities()
       ↓
 inventorySync.ts → fetchCities()
       ↓
-Supabase Edge Function "inventory-sync"
+Try: HTTPS GET to https://api.hotel.com.tn/static/cities
+      ↓
+Success → Parse response (items, source, cached, fetchedAt)
+      ↓
+Check ETag and Cache-Control headers
+      ↓
+Cities returned & cached
+      ↓
+(If public API fails)
+      ↓
+Fallback: Supabase Edge Function "inventory-sync"
 { action: 'cities' }
       ↓
 myGO ListCity API
       ↓
 Cities returned & cached
+      ↓
+(If both fail)
+      ↓
+Use static tunisianCities from constants
 ```
 
 ## Type Reference
@@ -273,17 +311,31 @@ Cities are displayed with region/country when available:
 
 ### Error Scenarios
 
-1. **Network failure**: Request to Supabase Edge Function fails
-2. **API error**: myGO API returns error response
-3. **CORS error**: Direct API call blocked (shouldn't happen with proxy)
-4. **Timeout**: Request takes too long
+1. **Public API failure**: Request to `https://api.hotel.com.tn/static/cities` fails (network error, 4xx/5xx response)
+2. **Supabase fallback failure**: Request to Supabase Edge Function fails
+3. **Network failure**: General network connectivity issues
+4. **API error**: myGO API returns error response (in fallback)
+5. **CORS error**: Direct API call blocked (shouldn't happen with public endpoint)
+6. **Timeout**: Request takes too long
 
 ### Error Recovery
 
-1. **Automatic fallback**: `useCities()` catches errors and falls back to `tunisianCities`
-2. **Visual feedback**: Error message displayed below autocomplete input
-3. **Manual retry**: User can click "Réessayer" to retry fetch with `force = true`
-4. **Graceful degradation**: Search functionality remains available with fallback cities
+Three-tier fallback system:
+
+1. **Primary**: Fetch from public API at `https://api.hotel.com.tn/static/cities`
+   - If successful, parse response and cache cities
+   - Log source, cached status, and ETag/Cache-Control headers in dev mode
+   
+2. **Fallback 1**: If public API fails, try Supabase Edge Function
+   - Call `inventory-sync` with `action: 'cities'`
+   - Provides backward compatibility during migration
+   
+3. **Fallback 2**: If both fail, use static `tunisianCities`
+   - `useCities()` catches errors and falls back to static cities
+   - Ensures search functionality always available
+   
+4. **Visual feedback**: Error message displayed below autocomplete input
+5. **Manual retry**: User can click "Réessayer" to retry fetch with `force = true`
 
 ### Error Display
 
@@ -307,9 +359,81 @@ Cities are displayed with region/country when available:
 
 ## Security
 
-### Why Use Supabase Proxy?
+### Public API Endpoint (Option A)
 
-We proxy all myGO API calls through Supabase Edge Functions instead of making direct calls from the browser for several security and reliability reasons:
+The city data is now fetched from a **public API endpoint** instead of Supabase Edge Functions:
+
+#### Endpoint Details
+- **URL**: `https://api.hotel.com.tn/static/cities`
+- **Method**: GET
+- **Authentication**: None (public endpoint)
+- **Hosting**: Cloudflare Worker
+
+#### Request Format
+```http
+GET /static/cities HTTP/1.1
+Host: api.hotel.com.tn
+Accept: application/json
+```
+
+#### Response Format
+```json
+{
+  "items": [
+    {
+      "id": "1",
+      "name": "Tunis",
+      "region": "Tunis Governorate",
+      "country": "Tunisia"
+    },
+    {
+      "id": "2",
+      "name": "Sousse",
+      "region": "Sousse Governorate",
+      "country": "Tunisia"
+    }
+  ],
+  "source": "mygo-api",
+  "cached": true,
+  "fetchedAt": "2026-02-09T20:30:00Z"
+}
+```
+
+#### Response Headers
+- **ETag**: Unique identifier for response version (e.g., `"abc123"`)
+  - Used for conditional requests (304 Not Modified)
+  - Client can cache response and use `If-None-Match` header
+- **Cache-Control**: Browser caching directives
+  - Example: `public, max-age=3600` (cache for 1 hour)
+  - `public`: Can be cached by browsers and CDNs
+  - `max-age`: How long to cache in seconds
+
+#### Response Fields
+- **items** (required): Array of City objects
+- **source** (optional): Data source identifier (e.g., "mygo-api", "cache")
+- **cached** (optional): Boolean indicating if response was served from cache
+- **fetchedAt** (optional): ISO 8601 timestamp of when data was fetched
+
+#### Error Responses
+- **4xx**: Client error (invalid request)
+- **5xx**: Server error (backend unavailable)
+- **Network error**: Connection failure, timeout
+
+#### Environment Variables
+- **None required**: Public API endpoint doesn't require credentials
+- **Existing vars still needed**: For fallback Supabase edge function
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+
+#### Dependencies
+- **Primary**: `api.hotel.com.tn` (Cloudflare Worker)
+- **Fallback**: Supabase Edge Function `inventory-sync`
+- **Backend**: MyGO API (ultimate source of city data)
+- **Static**: `tunisianCities` array (final fallback)
+
+### Supabase Proxy (Fallback Only)
+
+The Supabase Edge Function is now used as a **fallback** when the public API is unavailable:
 
 #### 1. **Credential Protection**
 - myGO API credentials (username, password, API key) are stored server-side

@@ -164,3 +164,152 @@ Animations should enhance the luxury feel while maintaining performance - smooth
   - Image gallery: swipeable on mobile, grid with lightbox on desktop
   - Guest selector: full-screen modal on mobile, popover on desktop
   - Booking steps: vertical progress indicator on mobile, horizontal on desktop
+
+## Technical Architecture
+
+### Backend Services & Dependencies
+
+#### 1. Public API (`api.hotel.com.tn`)
+**Hosting**: Cloudflare Worker
+**Purpose**: Static city data endpoint
+
+- **Endpoint**: `https://api.hotel.com.tn/static/cities`
+- **Method**: GET
+- **Auth**: None (public)
+- **Response Format**:
+  ```json
+  {
+    "items": [{"id": "1", "name": "Tunis", "region": "...", "country": "Tunisia"}],
+    "source": "mygo-api",
+    "cached": true,
+    "fetchedAt": "2026-02-09T20:30:00Z"
+  }
+  ```
+- **Headers**:
+  - `ETag`: Response version identifier
+  - `Cache-Control`: Browser caching directives (e.g., `public, max-age=3600`)
+- **Fallback**: Supabase Edge Function `inventory-sync`
+
+#### 2. Supabase Edge Functions
+**Purpose**: Secure proxy for authenticated operations and fallback for cities
+
+- **`inventory-sync`**:
+  - `action: 'cities'` - Fallback city data (when public API fails)
+  - `action: 'hotels'` - Hotels by city
+  - `action: 'search'` - Hotel search with availability
+  - `action: 'prebook'` - Pre-booking confirmation
+  - `action: 'checkout-initiate'` - Credit check and checkout
+  - `action: 'booking'` - Complete booking
+- **`search-hotels`**: Public search endpoint
+- **`create-booking`**: Protected booking creation (requires JWT)
+- **`get-confirmation`**: Booking confirmation retrieval
+
+#### 3. MyGO API (Backend)
+**Purpose**: Ultimate source of hotel inventory data
+**Access**: Via Cloudflare Worker or Supabase Edge Functions only (never direct from frontend)
+
+- ListCity API - City data
+- SearchHotels API - Hotel availability
+- Booking APIs - Reservation management
+
+#### 4. Supabase Database & Auth
+**Purpose**: User accounts, booking records, session management
+
+- **Auth**: Email/password, anonymous sessions
+- **Tables**: `profiles`, `bookings`
+- **Row-level security**: User isolation
+
+#### 5. ClicToPay (Payment Gateway)
+**Purpose**: Secure payment processing
+**Integration**: Server-side only
+
+- Payment parameter generation: Backend endpoint only
+- Pre-authorization support
+- Success/failure redirect URLs
+
+#### 6. Cloudflare (Hosting & CDN)
+**Purpose**: Frontend hosting, caching, CDN
+
+- Static site hosting (GitHub Pages)
+- API endpoint hosting (Cloudflare Worker)
+- DDoS protection via Zero Trust
+
+### Data Flow: City Loading (Option A)
+
+```
+Browser → Public API (api.hotel.com.tn/static/cities)
+          ↓
+        Success → Parse response (items, source, cached, fetchedAt)
+                  Check ETag/Cache-Control headers
+                  Cache in memory
+          ↓
+        Failure → Try Supabase Edge Function (inventory-sync, action: cities)
+                  ↓
+                Success → Cache cities
+                  ↓
+                Failure → Use static tunisianCities array
+```
+
+### Environment Variables
+
+#### Required (Vite format)
+```env
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=xxx
+VITE_CLIC_TO_PAY_URL=https://www.clictopay.com.tn
+VITE_CLIC_TO_PAY_PARAMS_ENDPOINT=https://api.hotel.com.tn/payment/params
+VITE_CTP_MERCHANT_ID=AMERICAN-TOURS
+VITE_CTP_ACTION_URL=https://test.clictopay.com.tn/payment/rest/register.do
+VITE_CTP_RETURN_URL=https://www.hotel.com.tn/payment/success
+VITE_CTP_FAIL_URL=https://www.hotel.com.tn/payment/fail
+```
+
+#### Not Required
+- No env vars needed for public API (`https://api.hotel.com.tn/static/cities`)
+- Payment credentials (e.g., `VITE_CTP_PASSWORD`) must NEVER be in frontend
+
+### Security Considerations
+
+1. **Credential Protection**:
+   - MyGO API credentials: Server-side only (Supabase/Cloudflare)
+   - Payment credentials: Backend only
+   - Frontend only has public Supabase anon key
+
+2. **CORS & Public Access**:
+   - Public API endpoint has CORS enabled for browser access
+   - Supabase Edge Functions handle CORS for protected operations
+
+3. **Rate Limiting**:
+   - Cloudflare Worker implements rate limiting
+   - Supabase has built-in rate limiting
+
+4. **Data Privacy**:
+   - City data: Public (no PII)
+   - Booking data: Row-level security in Supabase
+   - Payment data: Never stored in frontend
+
+### Third-Party Service Matrix
+
+| Service | Purpose | Access Method | Auth Required | Fallback |
+|---------|---------|---------------|---------------|----------|
+| Public API (Cloudflare) | City data | Direct HTTPS | No | Supabase EF |
+| Supabase Edge Functions | Protected operations | Supabase client | JWT (for bookings) | N/A |
+| MyGO API | Hotel inventory | Via proxy only | Server-side only | N/A |
+| Supabase Database | User/booking data | Supabase client | JWT | N/A |
+| ClicToPay | Payment | Server-side redirect | Merchant credentials | N/A |
+| Cloudflare Zero Trust | Security | Automatic | N/A | N/A |
+
+### Caching Strategy
+
+1. **City Data**:
+   - **Level 1**: Module-level cache in `useCities` hook (session duration)
+   - **Level 2**: Browser cache via `Cache-Control` header (1 hour)
+   - **Level 3**: Cloudflare Worker cache (configurable)
+   - **Level 4**: Static fallback (`tunisianCities`)
+
+2. **Hotel Search**:
+   - No caching (real-time availability)
+
+3. **Static Assets**:
+   - Vite build hash in filenames
+   - Browser cache with long TTL

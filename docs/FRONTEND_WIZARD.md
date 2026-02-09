@@ -20,11 +20,16 @@ This document describes the complete booking wizard flow implemented in `www.hot
 ### Services
 
 #### Security-Compliant Services
-All API calls go through Supabase Edge Functions to prevent credential exposure:
+Most API calls go through Supabase Edge Functions to prevent credential exposure, with exceptions for public endpoints:
 
 1. **`searchHotels.ts`** - Hotel search via Supabase EF `inventory-sync` (action: `search`)
 2. **`inventorySync.ts`** - Core service for all myGO operations:
-   - `fetchCities()` - Get available cities
+   - `fetchCities()` - Get available cities from **public API** (`https://api.hotel.com.tn/static/cities`)
+     - **Primary**: Direct HTTPS GET to public endpoint (no authentication)
+     - **Fallback 1**: Supabase Edge Function `inventory-sync` (action: `cities`)
+     - **Fallback 2**: Static `tunisianCities` array
+     - Supports ETag/Cache-Control headers for efficient caching
+     - Returns format: `{ items: City[], source, cached, fetchedAt }`
    - `fetchHotelsByCity()` - Get hotels in a city
    - `searchInventory()` - Search hotels with availability
    - `prebookRoom()` - Pre-book a room (NEW)
