@@ -67,7 +67,6 @@ const ensureSession = async (supabase: SupabaseClient) => {
 }
 
 export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabase = getSupabaseClient()
   
   if (!supabase) {
@@ -103,13 +102,6 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
 
   try {
     console.log('Payload ready:', payload)
-    const functionUrl = supabaseUrl
-      ? new URL('/functions/v1/inventory-sync', supabaseUrl).toString()
-      : null
-    console.log(
-      'Supabase function URL:',
-      functionUrl ?? 'VITE_SUPABASE_URL manquante.'
-    )
 
     const accessToken = await ensureSession(supabase)
     let response = await invokeCreateBooking(accessToken)
