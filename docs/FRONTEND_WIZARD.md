@@ -171,8 +171,8 @@ Three modes supported:
   - Total amount with taxes
 - User reviews all information before proceeding
 
-### 6. Checkout Initiate with Credit Check (NEW - Backend Implementation Required)
-**Trigger**: After review, before payment
+### 6. Checkout Initiate with Credit Check (✅ IMPLEMENTED Phase 1)
+**Trigger**: After review, before payment (Step 3 in BookingPage)
 
 **Function**: `initiateCheckout()` in `inventorySync.ts`
 
@@ -200,27 +200,47 @@ interface CheckoutInitiateResponse {
 }
 ```
 
-**Credit Check Logic**:
+**UI Implementation (Phase 1)**:
 
-1. **STRICT Mode + Insufficient Credit**:
+1. **Wallet Insufficient (Blocked State)**:
    ```json
    { "blocked": true, "reason": "Crédit insuffisant" }
    ```
-   - Show blocking message
-   - Display CTA: "Changer dates/hôtel" (navigate back to search)
+   **UI Behavior**:
+   - Show yellow warning banner with explicit message
+   - Explain: "Réservation temporairement indisponible"
+   - Display reason: "Crédit insuffisant"
+   - Provide CTAs:
+     - "Rechercher d'autres hôtels" (navigate to search)
+     - "Modifier la réservation" (go back to step 2)
+   - Block progression to payment completely
 
-2. **ON_HOLD_PREAUTH Mode**:
+2. **MyGo OnRequest**:
+   - Booking proceeds but hotel confirmation is pending
+   - ConfirmationPage shows yellow "En attente" status
+   - Auto-polling refreshes status every 30 seconds
+   - Updates to "Validée" when hotel confirms
+   - See Section 8 for details
+
+3. **ON_HOLD_PREAUTH Mode** (Phase 2):
    ```json
    { "blocked": false, "formUrl": "https://...", "preauth": true }
    ```
    - Show "Pré-autorisation en cours" message
    - Redirect to ClicToPay via `formUrl`
+   - *Not implemented in Phase 1*
 
-3. **Normal Flow**:
+4. **Normal Flow**:
    ```json
    { "blocked": false }
    ```
-   - Proceed to standard ClicToPay payment
+   - Proceed to standard ClicToPay payment via `createGuestBooking()`
+
+**Error Handling**:
+- All errors display user-friendly French messages
+- No raw backend errors exposed to users
+- Retry mechanism available for transient errors
+- Clear recovery CTAs (return to search, modify booking, retry)
 
 ### 7. Payment
 **Page**: BookingPage (Step 3) → External ClicToPay
@@ -232,18 +252,25 @@ interface CheckoutInitiateResponse {
 - `VITE_CTP_ACTION_URL`
 - `VITE_CTP_RETURN_URL`
 - `VITE_CTP_FAIL_URL`
+- `VITE_PAYMENT_TEST_MODE` - **✅ NEW**: Toggle test/production payment URLs
+  - `true` = Use test payment gateway
+  - `false` or empty = Use production payment gateway (default)
 - ~~`VITE_CTP_PASSWORD`~~ - **NEVER expose in frontend** (server-side only)
 
 **Security Note**:
 - `generatePaymentParams()` is **deprecated**
 - All payment initiation must go through backend `checkout-initiate` endpoint
 - Frontend should NEVER have access to payment credentials
+- Payment test mode uses environment variable only (no hardcoded URLs)
 
 **Process**:
-1. Call backend to create booking (via `guestBooking.ts`)
-2. Backend returns payment URL
-3. Redirect user to ClicToPay form
-4. After payment, ClicToPay redirects to confirmation page with token
+1. User clicks "Procéder au paiement" in Step 3
+2. Frontend calls `initiateCheckout()` to verify wallet credit
+3. If blocked → show warning UI (no payment)
+4. If not blocked → call `createGuestBooking()`
+5. Backend returns payment URL
+6. Redirect user to ClicToPay form
+7. After payment, ClicToPay redirects to confirmation page with token
 
 ### 8. Confirmation
 **Page**: ConfirmationPage
@@ -260,29 +287,50 @@ interface CheckoutInitiateResponse {
   - Guest information
   - Dates and pricing
 
-**Status Display** (NEW):
+**Status Display** (✅ IMPLEMENTED Phase 1):
 
-Two distinct status sections:
+Two distinct status sections with consistent styling:
 
-#### 1. myGO State
-Shows hotel confirmation status:
+#### 1. myGO State (Hotel Confirmation Status)
+Shows hotel confirmation status with auto-polling every 30 seconds:
 
-| State | Icon | Label | Description |
-|-------|------|-------|-------------|
-| `OnRequest` | ⏰ Yellow | En attente | Réservation en cours de traitement par l'hôtel |
-| `Validated` | ✓ Green | Validée | Réservation validée par l'hôtel |
-| `Cancelled` | ✗ Red | Annulée | Réservation annulée |
+| State | Icon | Label | Description | UI Treatment |
+|-------|------|-------|-------------|--------------|
+| `OnRequest` | ⏰ Yellow | En attente | Réservation en cours de traitement par l'hôtel | Yellow warning banner, continues polling |
+| `Validated` | ✓ Green | Validée | Réservation validée par l'hôtel | Green success banner, stops polling |
+| `Cancelled` | ✗ Red | Annulée | Réservation annulée | Red error banner, stops polling |
+
+**OnRequest Handling (Phase 1)**:
+- Displayed with clear yellow warning icon and border
+- User-friendly message: "Votre réservation est en cours de traitement par l'hôtel"
+- Auto-refresh mechanism polls backend every 30 seconds
+- Stops polling when state changes to `Validated` or `Cancelled`
+- Does not stop polling on temporary network errors (graceful degradation)
+- User can still download voucher and access booking details
 
 #### 2. Payment Status
 Shows payment processing state:
 
-| Status | Icon | Label | Description |
-|--------|------|-------|-------------|
-| `pending` | ⚠️ Yellow | En attente | Paiement en cours de traitement |
-| `preauth` | ⏰ Blue | Pré-autorisation | Pré-autorisation bancaire en cours |
-| `captured` | ✓ Green | Confirmé | Paiement confirmé avec succès |
-| `reversed` | ↻ Orange | Annulé | Paiement annulé et remboursé |
-| `failed` | ✗ Red | Échec | Paiement non traité |
+| Status | Icon | Label | Description | UI Treatment |
+|--------|------|-------|-------------|--------------|
+| `pending` | ⚠️ Yellow | En attente | Paiement en cours de traitement | Yellow info banner |
+| `preauth` | ⏰ Blue | Pré-autorisation | Pré-autorisation bancaire en cours | Blue info banner |
+| `captured` | ✓ Green | Confirmé | Paiement confirmé avec succès | Green success banner |
+| `reversed` | ↻ Orange | Annulé | Paiement annulé et remboursé | Orange warning banner |
+| `failed` | ✗ Red | Échec | Paiement non traité | Red error banner |
+
+**Blocked Checkout UI (Phase 1 - Wallet Insufficient)**:
+- Displayed in Step 3 of BookingPage when `CheckoutInitiateResponse.blocked = true`
+- Yellow warning banner with:
+  - Warning icon
+  - Title: "Réservation temporairement indisponible"
+  - Reason: Displays `CheckoutBlockReason` (e.g., "Crédit insuffisant")
+  - Suggestion: "Nous vous suggérons de modifier vos dates de séjour ou d'essayer un autre hôtel"
+- CTAs:
+  - Primary: "Rechercher d'autres hôtels" → Navigate to search page
+  - Secondary: "Modifier la réservation" → Return to Step 2
+- Payment button is hidden when checkout is blocked
+- State persists until user navigates away or modifies booking
 
 **Polling**:
 - Auto-refresh every 30 seconds (optimized for server load)
@@ -456,14 +504,26 @@ console.log(`Build: ${version.sha} on ${version.branch}`)
 
 ### Required (Vite format)
 ```env
+# Supabase Configuration
 VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=xxx
+
+# Payment Configuration
 VITE_CLIC_TO_PAY_URL=https://www.clictopay.com.tn
 VITE_CLIC_TO_PAY_PARAMS_ENDPOINT=https://api.hotel.com.tn/payment/params
 VITE_CTP_MERCHANT_ID=AMERICAN-TOURS
 VITE_CTP_ACTION_URL=https://test.clictopay.com.tn/payment/rest/register.do
 VITE_CTP_RETURN_URL=https://www.hotel.com.tn/payment/success
 VITE_CTP_FAIL_URL=https://www.hotel.com.tn/payment/fail
+
+# Payment Test Mode (✅ NEW - Phase 1)
+VITE_PAYMENT_TEST_MODE=false  # Set to 'true' for test mode, 'false' or empty for production
+```
+
+### Optional Configuration
+```env
+# Debug Mode (future enhancement)
+VITE_DEBUG_MODE=false  # Enable debug logging and performance metrics
 ```
 
 ### Removed (Legacy CRA format)
@@ -475,6 +535,11 @@ REACT_APP_CTP_RETURN_URL
 REACT_APP_CTP_FAIL_URL
 REACT_APP_CTP_PASSWORD  # Never expose passwords in frontend!
 ```
+
+**Security Notes**:
+- Payment credentials (passwords, secrets) are NEVER exposed in frontend
+- All sensitive operations handled server-side through Supabase Edge Functions
+- Test mode uses environment variable only (no hardcoded test URLs)
 
 ## Testing
 
@@ -497,8 +562,8 @@ npm run deploy  # Builds and deploys to GitHub Pages
 
 ### Planned but Not Yet Implemented
 1. **Prebook UI Integration**: Wire up `prebookRoom()` in BookingPage after room selection
-2. **Checkout Credit Check UI**: Implement blocking/preauth states in BookingPage
-3. **Account Creation During Checkout**: Add optional registration section in BookingPage
+2. **ON_HOLD_PREAUTH Mode UI**: Implement preauth redirect flow in BookingPage (Phase 2)
+3. **Account Creation During Checkout**: Add optional registration section in BookingPage (Phase 2)
 4. **Debug Mode**: Add `?debug=true` URL parameter support
 5. **Booking History**: User dashboard to view past bookings
 6. **Favorites**: Save hotels to favorites list
@@ -510,7 +575,7 @@ npm run deploy  # Builds and deploys to GitHub Pages
 The following features require backend implementation in Supabase Edge Functions:
 
 1. **Prebook Endpoint**: `inventory-sync` with `action: 'prebook'`
-2. **Checkout Initiate Endpoint**: `inventory-sync` with `action: 'checkout-initiate'`
+2. **Checkout Initiate Endpoint**: `inventory-sync` with `action: 'checkout-initiate'` ✅ (Frontend ready)
 3. **Booking Status Endpoint**: `inventory-sync` with `action: 'booking-status'`
 4. **Payment Parameter Generation**: Secure ClicToPay param generation
 
@@ -536,6 +601,33 @@ The following features require backend implementation in Supabase Edge Functions
 
 ## Changelog
 
+### 2026-02-10 - Phase 1 Booking Wizard UI Updates
+- ✅ **Wallet Insufficient Handling**: Added explicit UI for blocked checkout due to insufficient credit
+  - Yellow warning banner with clear message and icon
+  - CTAs to search other hotels or modify booking
+  - Prevents payment progression when `CheckoutInitiateResponse.blocked = true`
+- ✅ **OnRequest State Enhancement**: Confirmed existing OnRequest handling is clear and user-friendly
+  - Yellow "En attente" status with auto-polling every 30 seconds
+  - Stops polling when state changes to Validated or Cancelled
+  - User-friendly messaging throughout
+- ✅ **Checkout Initiate Integration**: Added `initiateCheckout()` call before payment
+  - Checks wallet credit availability before proceeding to payment
+  - Handles blocked state with appropriate UI
+  - Falls back gracefully on errors
+- ✅ **Payment Test Mode**: Added `VITE_PAYMENT_TEST_MODE` environment variable
+  - Safe toggle for test vs production payment URLs
+  - Documented in .env.example
+  - No hardcoded URLs or exposed secrets
+- ✅ **Error Handling Enhancement**: Ensured all errors are user-friendly
+  - No raw backend errors exposed
+  - Clear recovery CTAs (retry, return to search, modify booking)
+  - Distinct error states (blocked checkout vs general errors)
+- ✅ **Documentation Updates**: Updated FRONTEND_WIZARD.md
+  - Documented OnRequest handling
+  - Documented wallet_insufficient blocking flow
+  - Documented payment test mode configuration
+  - Updated status handling sections
+
 ### 2026-02-08
 - ✅ Removed `hotelService.ts` (security fix)
 - ✅ Removed hardcoded myGO credentials
@@ -557,6 +649,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: February 8, 2026
-**Version**: 1.0.0
+**Last Updated**: February 10, 2026
+**Version**: 1.1.0 - Phase 1 Complete
 **Author**: Development Team
