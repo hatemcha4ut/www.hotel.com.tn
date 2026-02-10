@@ -265,7 +265,7 @@ Try: HTTPS GET to https://api.hotel.com.tn/static/cities
       ↓
 Success → Parse response (items, source, cached, fetchedAt)
       ↓
-Check ETag and Cache-Control headers
+Browser HTTP cache applies ETag / Cache-Control (headers logged in dev)
       ↓
 Cities returned & cached
       ↓
