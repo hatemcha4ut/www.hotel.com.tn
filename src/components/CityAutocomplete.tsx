@@ -249,31 +249,7 @@ export function CityAutocomplete({
           ))}
         </ul>
       )}
-      {error && usingFallback && (
-        <div className="mt-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-          <div className="flex items-start gap-2">
-            <Info size={16} className="text-destructive mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-xs text-destructive font-medium">
-                {error.message}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Villes par défaut affichées
-              </p>
-            </div>
-          </div>
-          {onRetry && (
-            <Button
-              onClick={onRetry}
-              variant="outline"
-              size="sm"
-              className="mt-2 w-full"
-            >
-              {t('cityAutocomplete.retry', language)}
-            </Button>
-          )}
-        </div>
-      )}
+
     </div>
   )
 }
