@@ -77,6 +77,11 @@ const invokeInventorySyncAction = async <T>(
 }
 
 export const fetchCities = async (): Promise<City[]> => {
+ copilot/update-city-loading-api
+  const PUBLIC_API_ENDPOINT = 'https://api.hotel.com.tn/static/cities'
+  
+
+ copilot/implement-cities-loading-option-a
   const PUBLIC_API_ENDPOINT = 'https://api.hotel.com.tn/static/cities'
   
   try {
@@ -89,11 +94,28 @@ export const fetchCities = async (): Promise<City[]> => {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      // Localized, user-friendly error message instead of a technical HTTP status string
+      throw new Error('Le service de recherche de villes est momentanément indisponible. Veuillez réessayer plus tard.')
     }
 
-    const data: PublicCitiesApiResponse = await response.json()
-    const cities = data?.items ?? []
+    const rawData: unknown = await response.json()
+
+    if (!rawData || typeof rawData !== 'object') {
+      throw new Error('Invalid cities payload: response is not an object')
+    }
+
+    const data = rawData as Partial<PublicCitiesApiResponse> & Record<string, unknown>
+    const items = (data as Record<string, unknown>).items
+
+    if (!Array.isArray(items)) {
+      throw new Error('Invalid cities payload: "items" is not an array')
+    }
+
+    if (!items.every((item) => item && typeof item === 'object')) {
+      throw new Error('Invalid cities payload: "items" must contain objects')
+    }
+
+    const cities = items as City[]
     
     if (import.meta.env.DEV) {
       console.log(`[Inventory] cities loaded: ${cities.length}`, {
@@ -130,6 +152,64 @@ export const fetchCities = async (): Promise<City[]> => {
       // Re-throw the original error to trigger fallback to static cities
       throw error
     }
+
+ main
+  try {
+    // Use public API endpoint instead of Supabase edge function
+    const response = await fetch(PUBLIC_API_ENDPOINT, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data: PublicCitiesApiResponse = await response.json()
+    const cities = data?.items ?? []
+    
+    if (import.meta.env.DEV) {
+      console.log(`[Inventory] cities loaded: ${cities.length}`, {
+        source: data.source,
+        cached: data.cached,
+        fetchedAt: data.fetchedAt,
+        etag: response.headers.get('ETag'),
+        cacheControl: response.headers.get('Cache-Control'),
+      })
+    }
+    
+    return cities
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error('[Inventory] Failed to fetch cities from public API:', {
+        error: error instanceof Error ? error.message : error,
+        endpoint: PUBLIC_API_ENDPOINT,
+        timestamp: new Date().toISOString(),
+      })
+    }
+ copilot/update-city-loading-api
+    
+    // Fallback: try Supabase edge function for backward compatibility
+    try {
+      const data = await invokeInventorySyncAction<InventorySyncCitiesResponse>({ action: 'cities' })
+      const cities = data?.cities ?? []
+      if (import.meta.env.DEV) {
+        console.log(`[Inventory] cities loaded from fallback: ${cities.length}`)
+      }
+      return cities
+    } catch (fallbackError) {
+      if (import.meta.env.DEV) {
+        console.error('[Inventory] Fallback also failed:', fallbackError)
+      }
+      // Re-throw the original error to trigger fallback to static cities
+      throw error
+    }
+
+    throw error
+ main
+ main
   }
 }
 
