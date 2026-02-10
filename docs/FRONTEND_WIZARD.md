@@ -29,8 +29,12 @@ Most API calls go through Supabase Edge Functions to prevent credential exposure
      - **Fallback 1**: Supabase Edge Function `inventory-sync` (action: `cities`)
      - **Fallback 2**: Static `tunisianCities` array
      - Supports ETag/Cache-Control headers for efficient caching
+ copilot/update-city-loading-api
+     - Returns format: `{ items: City[], source, cached, fetchedAt }`
+
      - Public API response shape: `{ items: City[], source, cached, fetchedAt }`
      - `fetchCities()` service return value: `Promise<City[]>` (cities array extracted from `items`)
+ main
    - `fetchHotelsByCity()` - Get hotels in a city
    - `searchInventory()` - Search hotels with availability
    - `prebookRoom()` - Pre-book a room (NEW)
