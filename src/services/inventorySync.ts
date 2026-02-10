@@ -90,7 +90,8 @@ export const fetchCities = async (): Promise<City[]> => {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      // Localized, user-friendly error message instead of a technical HTTP status string
+      throw new Error('Le service de recherche de villes est momentanément indisponible. Veuillez réessayer plus tard.')
     }
 
     const rawData: unknown = await response.json()
