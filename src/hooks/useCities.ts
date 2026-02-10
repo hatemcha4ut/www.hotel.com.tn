@@ -68,7 +68,7 @@ export function useCities(): UseCitiesResult {
     } catch (err) {
       fetchPromise = null
       // Fallback to static tunisianCities from constants
-      // This is a graceful degradation, not an error from user perspective
+      // This is a graceful degradation, not an error from the user's perspective
       setCities(tunisianCities)
       setUsingFallback(true)
       // Don't set error state since we have working fallback data
