@@ -240,7 +240,7 @@ Animations should enhance the luxury feel while maintaining performance - smooth
 Browser → Public API (api.hotel.com.tn/static/cities)
           ↓
         Success → Parse response (items, source, cached, fetchedAt)
-                  Check ETag/Cache-Control headers
+                  Rely on browser HTTP cache (ETag/Cache-Control) and optionally log headers
                   Cache in memory
           ↓
         Failure → Try Supabase Edge Function (inventory-sync, action: cities)
