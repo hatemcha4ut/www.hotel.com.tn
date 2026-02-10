@@ -66,12 +66,13 @@ export function useCities(): UseCitiesResult {
       setCities(results)
       setUsingFallback(false)
     } catch (err) {
-      const errorMessage = getUserFriendlyErrorMessage(err, 'cities')
-      setError(new Error(errorMessage))
       fetchPromise = null
       // Fallback to static tunisianCities from constants
+      // This is a graceful degradation, not an error from user perspective
       setCities(tunisianCities)
       setUsingFallback(true)
+      // Don't set error state since we have working fallback data
+      // The app functions correctly with static cities
       if (import.meta.env.DEV) {
         console.warn('[useCities] Failed to fetch cities after retries, using fallback:', err)
       }
