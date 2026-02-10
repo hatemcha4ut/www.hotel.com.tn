@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { fetchCities } from '@/services/inventorySync'
 import { tunisianCities } from '@/constants/cities'
 import type { City } from '@/types'
-import { getUserFriendlyErrorMessage } from '@/lib/edgeFunctionErrors'
 
 // Module-level cache so data survives re-mounts
 let cachedCities: City[] | null = null
