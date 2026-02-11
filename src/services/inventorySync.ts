@@ -66,27 +66,29 @@ const toNumber = (value: unknown): number | undefined => {
 /**
  * Helper function to transform searchParams to backend format
  */
-const transformSearchParams = (searchParams: any) => {
+const transformSearchParams = (searchParams: unknown) => {
   if (!searchParams || typeof searchParams !== 'object') return undefined
   
+  const sp = searchParams as Record<string, unknown>
   return {
-    cityId: searchParams.cityId ? toNumber(searchParams.cityId) : undefined,
-    checkIn: searchParams.checkIn,
-    checkOut: searchParams.checkOut,
-    rooms: searchParams.rooms,
-    currency: searchParams.currency || 'TND',
+    cityId: sp.cityId ? toNumber(sp.cityId) : undefined,
+    checkIn: sp.checkIn,
+    checkOut: sp.checkOut,
+    rooms: sp.rooms,
+    currency: (typeof sp.currency === 'string' ? sp.currency : undefined) || 'TND',
   }
 }
 
 /**
  * Helper function to transform room to selectedOffer format
  */
-const transformSelectedOffer = (hotelId: unknown, room: any) => {
+const transformSelectedOffer = (hotelId: unknown, room: unknown) => {
   if (!hotelId || !room || typeof room !== 'object') return undefined
   
+  const r = room as Record<string, unknown>
   const hotelIdNum = toNumber(hotelId)
-  const roomIdNum = toNumber(room.id)
-  const boardingIdNum = toNumber(room.selectedBoarding || room.boardingType)
+  const roomIdNum = toNumber(r.id)
+  const boardingIdNum = toNumber(r.selectedBoarding || r.boardingType)
   
   // Only return if all IDs are valid numbers (check for undefined, not falsiness)
   if (hotelIdNum !== undefined && roomIdNum !== undefined && boardingIdNum !== undefined) {
@@ -103,15 +105,19 @@ const transformSelectedOffer = (hotelId: unknown, room: any) => {
 /**
  * Helper function to transform guestDetails to customer format
  */
-const transformCustomer = (guestDetails: any) => {
+const transformCustomer = (guestDetails: unknown) => {
   if (!guestDetails || typeof guestDetails !== 'object') return undefined
   
+  const gd = guestDetails as Record<string, unknown>
+  const countryCode = typeof gd.countryCode === 'string' ? gd.countryCode : ''
+  const phone = typeof gd.phone === 'string' ? gd.phone : ''
+  
   return {
-    firstName: guestDetails.firstName,
-    lastName: guestDetails.lastName,
-    email: guestDetails.email,
-    phone: `${guestDetails.countryCode || ''}${guestDetails.phone || ''}`.trim(),
-    nationality: guestDetails.nationality,
+    firstName: gd.firstName,
+    lastName: gd.lastName,
+    email: gd.email,
+    phone: `${countryCode}${phone}`.trim(),
+    nationality: gd.nationality,
   }
 }
 

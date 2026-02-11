@@ -112,11 +112,14 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
   }
 
   // Transform guestDetails to customer structure
+  const countryCode = bookingData.guestDetails.countryCode || ''
+  const phone = bookingData.guestDetails.phone || ''
+  
   const customer = {
     firstName: bookingData.guestDetails.firstName,
     lastName: bookingData.guestDetails.lastName,
     email: bookingData.guestDetails.email,
-    phone: `${bookingData.guestDetails.countryCode}${bookingData.guestDetails.phone}`,
+    phone: `${countryCode}${phone}`.trim(),
     nationality: bookingData.guestDetails.nationality,
   }
 
