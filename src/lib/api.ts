@@ -369,10 +369,21 @@ const mapHotelDetailToHotel = (detail: any): Hotel => {
     boardingType.push(...detail.BoardingTypes.filter((b: any) => typeof b === 'string'))
   }
   
+  const hotelId = String(detail.id || detail.Id)
+  const name = detail.name || detail.Name
+  
+  // Log warning if critical fields are missing
+  if (!name) {
+    console.warn('Hotel API response missing name field:', detail)
+  }
+  if (!hotelId || hotelId === 'undefined') {
+    console.error('Hotel API response missing id field:', detail)
+  }
+  
   return {
     type: 'hotel',
-    id: String(detail.id || detail.Id),
-    name: detail.name || detail.Name || String(detail.id || detail.Id),
+    id: hotelId,
+    name: name || 'Hôtel',
     city: detail.cityName || detail.CityName || detail.city || detail.City || '',
     address: detail.address || detail.Address || '',
     stars: detail.star || detail.Star || detail.stars || detail.Stars || detail.category || detail.Category || 0,
@@ -455,10 +466,20 @@ export const api = {
 
   getHotelDetails: async (hotelId: string): Promise<Hotel | null> => {
     try {
+      // Validate hotelId before making API call
+      const hotelIdNum = parseInt(hotelId)
+      if (!Number.isFinite(hotelIdNum) || hotelIdNum < 1) {
+        console.error('Invalid hotel ID:', hotelId)
+        if (import.meta.env.DEV) {
+          return mockHotels.find(h => h.id === hotelId) || null
+        }
+        return null
+      }
+      
       const response = await fetch('https://api.hotel.com.tn/hotels/detail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hotelId: parseInt(hotelId) }),
+        body: JSON.stringify({ hotelId: hotelIdNum }),
       })
       
       if (!response.ok) {

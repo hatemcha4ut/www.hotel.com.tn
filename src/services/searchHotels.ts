@@ -174,11 +174,15 @@ export const fetchSearchHotels = async (params: SearchRequest): Promise<SearchRe
           const errorData = JSON.parse(errorText)
           const errorMessage = errorData.message || errorData.error || 'Paramètres de recherche invalides'
           
-          // Check for specific validation errors
-          if (errorMessage.toLowerCase().includes('city')) {
+          // Check for specific validation errors using more precise patterns
+          const lowerMessage = errorMessage.toLowerCase()
+          if (lowerMessage.includes('cityid') || lowerMessage.includes('city id') || 
+              lowerMessage.includes('invalid city') || lowerMessage.includes('ville invalide')) {
             throw new Error('Ville invalide. Veuillez sélectionner une ville valide.')
           }
-          if (errorMessage.toLowerCase().includes('date')) {
+          if (lowerMessage.includes('checkin') || lowerMessage.includes('checkout') || 
+              lowerMessage.includes('check-in') || lowerMessage.includes('check-out') ||
+              lowerMessage.includes('invalid date') || lowerMessage.includes('date invalide')) {
             throw new Error('Dates invalides. Veuillez vérifier vos dates de séjour.')
           }
           throw new Error(errorMessage)
