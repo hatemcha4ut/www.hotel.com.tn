@@ -147,85 +147,12 @@ function mapMyGoHotelToFrontend(myGoHotel: MyGoHotelResponse): Hotel {
   }
 }
 
-const mockCities: City[] = [
-  { id: '1', name: 'Tunis', country: 'Tunisia' },
-  { id: '2', name: 'Sousse', country: 'Tunisia' },
-  { id: '3', name: 'Hammamet', country: 'Tunisia' },
-  { id: '4', name: 'Djerba', country: 'Tunisia' },
-  { id: '5', name: 'Monastir', country: 'Tunisia' },
-  { id: '6', name: 'Mahdia', country: 'Tunisia' },
-  { id: '7', name: 'Tozeur', country: 'Tunisia' },
-  { id: '8', name: 'Sfax', country: 'Tunisia' },
-]
-
-
-const mockRooms: Room[] = [
-  {
-    id: 'r1',
-    name: 'Chambre Standard Double',
-    bedConfig: '1 lit double',
-    maxOccupancy: 2,
-    size: 28,
-    boardingType: 'Petit-déjeuner',
-    boardingOptions: [
-      { type: 'Logement seul', pricePerNight: 100, totalPrice: 300 },
-      { type: 'Petit-déjeuner', pricePerNight: 120, totalPrice: 360 },
-      { type: 'Demi-pension', pricePerNight: 150, totalPrice: 450 },
-      { type: 'Pension complète', pricePerNight: 180, totalPrice: 540 },
-      { type: 'All Inclusive', pricePerNight: 220, totalPrice: 660 },
-    ],
-    amenities: ['WiFi', 'Climatisation', 'TV', 'Minibar', 'Coffre-fort'],
-    cancellationPolicy: 'Annulation gratuite jusqu\'à 7 jours avant l\'arrivée',
-    pricePerNight: 120,
-    totalPrice: 360,
-    image: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=400&h=300&fit=crop',
-  },
-  {
-    id: 'r2',
-    name: 'Chambre Supérieure Vue Mer',
-    bedConfig: '1 lit double ou 2 lits simples',
-    maxOccupancy: 3,
-    size: 35,
-    boardingType: 'Demi-pension',
-    boardingOptions: [
-      { type: 'Logement seul', pricePerNight: 150, totalPrice: 450 },
-      { type: 'Petit-déjeuner', pricePerNight: 180, totalPrice: 540 },
-      { type: 'Demi-pension', pricePerNight: 220, totalPrice: 660 },
-      { type: 'Pension complète', pricePerNight: 260, totalPrice: 780 },
-      { type: 'All Inclusive', pricePerNight: 320, totalPrice: 960 },
-    ],
-    amenities: ['WiFi', 'Climatisation', 'TV', 'Minibar', 'Coffre-fort', 'Balcon', 'Vue mer'],
-    cancellationPolicy: 'Annulation gratuite jusqu\'à 7 jours avant l\'arrivée',
-    pricePerNight: 180,
-    totalPrice: 540,
-    image: 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=400&h=300&fit=crop',
-  },
-  {
-    id: 'r3',
-    name: 'Suite Junior',
-    bedConfig: '1 lit king size',
-    maxOccupancy: 4,
-    size: 45,
-    boardingType: 'All Inclusive',
-    boardingOptions: [
-      { type: 'Logement seul', pricePerNight: 230, totalPrice: 690 },
-      { type: 'Petit-déjeuner', pricePerNight: 260, totalPrice: 780 },
-      { type: 'Demi-pension', pricePerNight: 300, totalPrice: 900 },
-      { type: 'Pension complète', pricePerNight: 350, totalPrice: 1050 },
-      { type: 'All Inclusive', pricePerNight: 420, totalPrice: 1260 },
-    ],
-    amenities: ['WiFi', 'Climatisation', 'TV', 'Minibar', 'Coffre-fort', 'Balcon', 'Vue mer', 'Salon', 'Baignoire'],
-    cancellationPolicy: 'Annulation gratuite jusqu\'à 14 jours avant l\'arrivée',
-    pricePerNight: 280,
-    totalPrice: 840,
-    image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
-  },
-]
+// Mock data removed - all data now comes from real API
 
 export const api = {
   getCities: async (): Promise<City[]> => {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return mockCities
+    console.warn('api.getCities() is deprecated. Use fetchCities() from cities hook instead.')
+    return []
   },
 
   searchHotels: async (params: {
@@ -284,8 +211,8 @@ export const api = {
   },
 
   getAvailableRooms: async (hotelId: string, roomCount?: number): Promise<Room[]> => {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    return mockRooms
+    console.warn('api.getAvailableRooms() is deprecated. Room data should come from inventory search.')
+    return []
   },
 
   createBooking: async (bookingData: any): Promise<{ reference: string }> => {

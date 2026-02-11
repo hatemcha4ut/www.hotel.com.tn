@@ -4,9 +4,10 @@ import { FeaturedDestinations } from '@/components/FeaturedDestinations'
 import { WhyBookWithUs } from '@/components/WhyBookWithUs'
 import { DealsSection } from '@/components/DealsSection'
 import { ResultsList } from '@/components/ResultsList'
-import { api } from '@/lib/api'
 import { Hotel } from '@/types'
 import type { SearchHotelsResult } from '@/services/searchHotels'
+import { fetchSearchHotels, mapSearchHotelsToList } from '@/services/searchHotels'
+import { format, addDays } from 'date-fns'
 import { useApp } from '@/contexts/AppContext'
 
 interface HomePageProps {
@@ -22,10 +23,23 @@ export function HomePage({ onSearch, onViewHotel, onResultsFound }: HomePageProp
   useEffect(() => {
     const loadPopularHotels = async () => {
       try {
-        const hotels = await api.searchHotels({})
+        // Fetch hotels from Tunis (cityId: 1) for the popular hotels section
+        const checkIn = format(addDays(new Date(), 7), 'yyyy-MM-dd')
+        const checkOut = format(addDays(new Date(), 10), 'yyyy-MM-dd')
+        
+        const response = await fetchSearchHotels({
+          cityId: 1, // Tunis
+          checkIn,
+          checkOut,
+          rooms: [{ adults: 2 }],
+        })
+        
+        const hotels = mapSearchHotelsToList(response.hotels)
         setPopularHotels(hotels.slice(0, 6))
       } catch (error) {
-        console.error('Error loading hotels:', error)
+        console.error('Error loading popular hotels:', error)
+        // Don't show error to user - just leave empty state
+        setPopularHotels([])
       } finally {
         setLoading(false)
       }
