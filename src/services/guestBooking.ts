@@ -75,7 +75,7 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
 
   // Transform searchParams to match backend contract
   const backendSearchParams = {
-    cityId: bookingData.searchParams.cityId ? parseInt(bookingData.searchParams.cityId, 10) : undefined,
+    cityId: bookingData.searchParams.cityId ? Number(bookingData.searchParams.cityId) : undefined,
     checkIn: bookingData.searchParams.checkIn,
     checkOut: bookingData.searchParams.checkOut,
     rooms: bookingData.searchParams.rooms,
@@ -84,11 +84,9 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
 
   // Transform room to selectedOffer structure
   const selectedOffer = {
-    hotelId: parseInt(bookingData.hotelId, 10),
-    roomId: parseInt(bookingData.room.id, 10),
-    boardingId: parseInt(bookingData.room.selectedBoarding || bookingData.room.boardingType, 10),
-    views: undefined, // Optional: can be added if available in room data
-    supplements: undefined, // Optional: can be added if available in room data
+    hotelId: Number(bookingData.hotelId),
+    roomId: Number(bookingData.room.id),
+    boardingId: Number(bookingData.room.selectedBoarding || bookingData.room.boardingType),
   }
 
   // Transform guestDetails to customer structure

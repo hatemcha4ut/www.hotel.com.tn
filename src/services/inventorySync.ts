@@ -51,6 +51,70 @@ export const getMyGoErrorMessage = (payload: unknown): string | null => {
   return null
 }
 
+/**
+ * Helper function to safely convert string or number to number
+ */
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const num = Number(value)
+    return isNaN(num) ? undefined : num
+  }
+  return undefined
+}
+
+/**
+ * Helper function to transform searchParams to backend format
+ */
+const transformSearchParams = (searchParams: any) => {
+  if (!searchParams || typeof searchParams !== 'object') return undefined
+  
+  return {
+    cityId: searchParams.cityId ? toNumber(searchParams.cityId) : undefined,
+    checkIn: searchParams.checkIn,
+    checkOut: searchParams.checkOut,
+    rooms: searchParams.rooms,
+    currency: searchParams.currency || 'TND',
+  }
+}
+
+/**
+ * Helper function to transform room to selectedOffer format
+ */
+const transformSelectedOffer = (hotelId: unknown, room: any) => {
+  if (!hotelId || !room || typeof room !== 'object') return undefined
+  
+  const hotelIdNum = toNumber(hotelId)
+  const roomIdNum = toNumber(room.id)
+  const boardingIdNum = toNumber(room.selectedBoarding || room.boardingType)
+  
+  // Only return if all IDs are valid numbers
+  if (hotelIdNum && roomIdNum && boardingIdNum) {
+    return {
+      hotelId: hotelIdNum,
+      roomId: roomIdNum,
+      boardingId: boardingIdNum,
+    }
+  }
+  
+  return undefined
+}
+
+/**
+ * Helper function to transform guestDetails to customer format
+ */
+const transformCustomer = (guestDetails: any) => {
+  if (!guestDetails || typeof guestDetails !== 'object') return undefined
+  
+  return {
+    firstName: guestDetails.firstName,
+    lastName: guestDetails.lastName,
+    email: guestDetails.email,
+    phone: `${guestDetails.countryCode || ''}${guestDetails.phone || ''}`.trim(),
+    nationality: guestDetails.nationality,
+  }
+}
+
 const invokeInventorySyncAction = async <T>(
   payload: InventorySyncPayload,
   headers?: Record<string, string>
@@ -192,30 +256,18 @@ export const prebookRoom = async (
 ): Promise<PrebookResponse> => {
   try {
     // Transform payload if it contains old structure
-    let transformedPayload = { ...payload }
+    const transformedPayload = { ...payload }
     
-    // Check if we need to transform searchParams and selectedOffer
-    if (payload.searchParams && typeof payload.searchParams === 'object') {
-      const sp = payload.searchParams as any
-      transformedPayload.searchParams = {
-        cityId: sp.cityId ? parseInt(sp.cityId, 10) : undefined,
-        checkIn: sp.checkIn,
-        checkOut: sp.checkOut,
-        rooms: sp.rooms,
-        currency: sp.currency || 'TND',
-      }
+    // Transform searchParams if present
+    const searchParams = transformSearchParams(payload.searchParams)
+    if (searchParams) {
+      transformedPayload.searchParams = searchParams
     }
     
-    // Transform room to selectedOffer if needed
-    if (payload.room && typeof payload.room === 'object') {
-      const room = payload.room as any
-      if (payload.hotelId && room.id) {
-        transformedPayload.selectedOffer = {
-          hotelId: parseInt(String(payload.hotelId), 10),
-          roomId: parseInt(String(room.id), 10),
-          boardingId: parseInt(String(room.selectedBoarding || room.boardingType), 10),
-        }
-      }
+    // Transform room to selectedOffer if present
+    const selectedOffer = transformSelectedOffer(payload.hotelId, payload.room)
+    if (selectedOffer) {
+      transformedPayload.selectedOffer = selectedOffer
     }
     
     const data = await invokeInventorySyncAction<PrebookResponse>({
@@ -249,42 +301,26 @@ export const initiateCheckout = async (
 ): Promise<CheckoutInitiateResponse> => {
   try {
     // Transform payload if it contains old structure
-    let transformedPayload = { ...payload }
+    const transformedPayload = { ...payload }
     
-    // Check if we need to transform searchParams and selectedOffer
-    if (payload.searchParams && typeof payload.searchParams === 'object') {
-      const sp = payload.searchParams as any
-      transformedPayload.searchParams = {
-        cityId: sp.cityId ? parseInt(sp.cityId, 10) : undefined,
-        checkIn: sp.checkIn,
-        checkOut: sp.checkOut,
-        rooms: sp.rooms,
-        currency: sp.currency || 'TND',
-      }
+    // Transform searchParams if present
+    const searchParams = transformSearchParams(payload.searchParams)
+    if (searchParams) {
+      transformedPayload.searchParams = searchParams
     }
     
-    // Transform room/rooms to selectedOffer if needed
+    // Transform room/rooms to selectedOffer if present
     if (payload.rooms && Array.isArray(payload.rooms) && payload.rooms.length > 0) {
-      const firstRoom = payload.rooms[0] as any
-      if (payload.hotelId && firstRoom.id) {
-        transformedPayload.selectedOffer = {
-          hotelId: parseInt(String(payload.hotelId), 10),
-          roomId: parseInt(String(firstRoom.id), 10),
-          boardingId: parseInt(String(firstRoom.selectedBoarding || firstRoom.boardingType), 10),
-        }
+      const selectedOffer = transformSelectedOffer(payload.hotelId, payload.rooms[0])
+      if (selectedOffer) {
+        transformedPayload.selectedOffer = selectedOffer
       }
     }
     
     // Transform guestDetails to customer if present
-    if (payload.guestDetails && typeof payload.guestDetails === 'object') {
-      const gd = payload.guestDetails as any
-      transformedPayload.customer = {
-        firstName: gd.firstName,
-        lastName: gd.lastName,
-        email: gd.email,
-        phone: `${gd.countryCode}${gd.phone}`,
-        nationality: gd.nationality,
-      }
+    const customer = transformCustomer(payload.guestDetails)
+    if (customer) {
+      transformedPayload.customer = customer
     }
     
     const data = await invokeInventorySyncAction<CheckoutInitiateResponse>({
