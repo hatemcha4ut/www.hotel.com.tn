@@ -151,27 +151,23 @@ export function SearchWidget({ onSearch, onResultsFound }: SearchWidgetProps) {
     } catch (err: any) {
       console.error('[Search] Error:', err)
       
-      // Detect CORS errors
-      // Note: This detection logic assumes Axios-like error structure (err.request, err.response)
-      // If the HTTP client changes, this logic may need to be updated
-      const errorMessage = err?.message || String(err)
-      const corsDetected = 
-        errorMessage.includes('CORS') || 
-        errorMessage.includes('Access-Control-Allow-Origin') ||
-        err?.name === 'NetworkError' ||
-        (err?.response === undefined && err?.request !== undefined)
+      let userMessage = 'Une erreur est survenue lors de la recherche.'
       
-      if (corsDetected) {
-        console.log('[Search] CORS blocked: use server proxy')
-        setIsCorsError(true)
-        toast.error(errorMessage)
-        setError(true)
-      } else {
-        // Use user-friendly error messages for Edge Function errors
-        const message = getUserFriendlyErrorMessage(err, 'search')
-        toast.error(message)
-        setError(true)
+      if (err?.message) {
+        if (err.message.includes('CORS') || err.message.includes('Access-Control')) {
+          userMessage = 'Erreur de connexion. Veuillez réessayer.'
+          setIsCorsError(true)
+        } else if (err.message.includes('400')) {
+          userMessage = 'Paramètres de recherche invalides. Vérifiez votre sélection.'
+        } else if (err.message.includes('500') || err.message.includes('502')) {
+          userMessage = 'Service temporairement indisponible. Veuillez réessayer dans quelques instants.'
+        } else {
+          userMessage = err.message
+        }
       }
+      
+      toast.error(userMessage)
+      setError(true)
     } finally {
       setIsLoading(false)
     }
