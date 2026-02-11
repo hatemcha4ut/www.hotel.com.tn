@@ -5,9 +5,55 @@ import { getApiBaseUrl, parseHttpError, getUserFriendlyErrorMessage } from '@/li
 // Direct API calls with credentials are removed to prevent credential exposure
 
 /**
+ * MyGo hotel detail API response interface (flexible to handle various field name casing)
+ */
+interface MyGoHotelResponse {
+  id?: string | number
+  Id?: string | number
+  hotelId?: string | number
+  HotelId?: string | number
+  name?: string
+  Name?: string
+  city?: string
+  City?: string
+  cityName?: string
+  address?: string
+  Address?: string
+  stars?: number
+  category?: number
+  Category?: number
+  rating?: number
+  Rating?: number
+  reviewCount?: number
+  ReviewCount?: number
+  description?: string
+  Description?: string
+  image?: string
+  mainPhoto?: string
+  MainPhoto?: string
+  images?: unknown[]
+  amenities?: unknown[]
+  Amenities?: unknown[]
+  boardingType?: unknown[]
+  boardingTypes?: unknown[]
+  price?: number
+  minPrice?: number
+  MinPrice?: number
+  latitude?: number
+  Latitude?: number
+  longitude?: number
+  Longitude?: number
+  checkInTime?: string
+  CheckInTime?: string
+  checkOutTime?: string
+  CheckOutTime?: string
+  [key: string]: unknown // Allow additional fields
+}
+
+/**
  * Maps MyGo hotel detail response to frontend Hotel interface
  */
-function mapMyGoHotelToFrontend(myGoHotel: any): Hotel {
+function mapMyGoHotelToFrontend(myGoHotel: MyGoHotelResponse): Hotel {
   const isValidNumber = (value: unknown): value is number =>
     typeof value === 'number' && Number.isFinite(value)
   
@@ -197,13 +243,20 @@ export const api = {
 
   getHotelDetails: async (hotelId: string): Promise<Hotel | null> => {
     try {
+      // Validate hotelId is numeric
+      const numericHotelId = Number(hotelId)
+      if (!Number.isFinite(numericHotelId) || numericHotelId <= 0) {
+        console.error(`Invalid hotel ID: ${hotelId}`)
+        return null
+      }
+
       const apiBaseUrl = getApiBaseUrl()
       const response = await fetch(`${apiBaseUrl}/hotels/detail`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ hotelId: Number(hotelId) }),
+        body: JSON.stringify({ hotelId: numericHotelId }),
       })
 
       if (!response.ok) {

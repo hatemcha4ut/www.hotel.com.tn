@@ -66,6 +66,18 @@ const extractLocation = (hotel: SearchHotel) => {
 const isValidNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
 
+/**
+ * Validates if a search response has the expected structure
+ */
+const isValidSearchResponse = (data: unknown): data is SearchResponse => {
+  return (
+    data !== null &&
+    typeof data === 'object' &&
+    'hotels' in data &&
+    Array.isArray((data as SearchResponse).hotels)
+  )
+}
+
 const normalizeHotelRooms = (rooms: SearchHotelRoom[] | undefined) =>
   Array.isArray(rooms) ? rooms : []
 
@@ -148,7 +160,7 @@ export const fetchSearchHotels = async (params: SearchRequest): Promise<SearchRe
       if (error) {
         console.error('search-hotels edge function error:', error)
         // Fall through to direct API call
-      } else if (data && Array.isArray(data.hotels)) {
+      } else if (isValidSearchResponse(data)) {
         return data
       }
     } catch (err) {
@@ -175,7 +187,7 @@ export const fetchSearchHotels = async (params: SearchRequest): Promise<SearchRe
 
     const data = await response.json()
     
-    if (!data || !Array.isArray(data.hotels)) {
+    if (!isValidSearchResponse(data)) {
       throw new Error('Réponse de recherche invalide.')
     }
 
