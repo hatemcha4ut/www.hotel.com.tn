@@ -161,8 +161,22 @@ export const fetchSearchHotels = async (params: SearchRequest): Promise<SearchRe
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Recherche échouée: ${response.status} - ${errorText}`)
+    let userMessage = 'Une erreur est survenue lors de la recherche.'
+    
+    if (response.status === 400) {
+      userMessage = 'Paramètres de recherche invalides. Vérifiez votre sélection.'
+    } else if (response.status >= 500) {
+      userMessage = 'Service temporairement indisponible. Veuillez réessayer dans quelques instants.'
+    }
+    
+    throw new Error(userMessage)
   }
 
-  return response.json()
+  const data = await response.json()
+  
+  if (!data || !Array.isArray(data.hotels)) {
+    throw new Error('Réponse de recherche invalide.')
+  }
+
+  return data
 }
