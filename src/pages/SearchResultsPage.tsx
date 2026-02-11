@@ -31,6 +31,7 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [noResults, setNoResults] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
   const [searchCounts, setSearchCounts] = useState<{
     rawCount?: number
     visibleCount?: number
@@ -95,7 +96,7 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
       }
     }
     loadHotels()
-  }, [searchParams, initialResults])
+  }, [searchParams, initialResults, retryCount])
 
   useEffect(() => {
     let filtered = [...hotels]
@@ -128,6 +129,10 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
     setSelectedStars(prev =>
       prev.includes(star) ? prev.filter(s => s !== star) : [...prev, star]
     )
+  }
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1)
   }
 
   return (
@@ -261,7 +266,14 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
               <Card className="p-12 text-center">
                 <h3 className="text-xl font-semibold mb-2">Une erreur est survenue</h3>
                 <p className="text-muted-foreground mb-6">{error}</p>
-                <Button onClick={onBack}>Nouvelle recherche</Button>
+                <div className="flex justify-center gap-3">
+                  <Button onClick={handleRetry} variant="default">
+                    Réessayer
+                  </Button>
+                  <Button onClick={onBack} variant="outline">
+                    Nouvelle recherche
+                  </Button>
+                </div>
               </Card>
             ) : noResults || filteredHotels.length === 0 ? (
               <Card className="p-12 text-center">

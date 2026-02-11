@@ -333,6 +333,64 @@ const mockRooms: Room[] = [
   },
 ]
 
+/**
+ * Maps MyGo hotel detail response to frontend Hotel type
+ */
+const mapHotelDetailToHotel = (detail: any): Hotel => {
+  // Extract image(s)
+  const images: string[] = []
+  if (detail.mainPhoto || detail.MainPhoto) {
+    images.push(detail.mainPhoto || detail.MainPhoto)
+  }
+  if (Array.isArray(detail.photos)) {
+    images.push(...detail.photos.filter((p: any) => typeof p === 'string'))
+  }
+  if (Array.isArray(detail.Photos)) {
+    images.push(...detail.Photos.filter((p: any) => typeof p === 'string'))
+  }
+  
+  const image = images[0] || ''
+  
+  // Extract amenities
+  const amenities: string[] = []
+  if (Array.isArray(detail.amenities)) {
+    amenities.push(...detail.amenities.filter((a: any) => typeof a === 'string'))
+  }
+  if (Array.isArray(detail.Amenities)) {
+    amenities.push(...detail.Amenities.filter((a: any) => typeof a === 'string'))
+  }
+  
+  // Extract boarding types
+  const boardingType: string[] = []
+  if (Array.isArray(detail.boardingTypes)) {
+    boardingType.push(...detail.boardingTypes.filter((b: any) => typeof b === 'string'))
+  }
+  if (Array.isArray(detail.BoardingTypes)) {
+    boardingType.push(...detail.BoardingTypes.filter((b: any) => typeof b === 'string'))
+  }
+  
+  return {
+    type: 'hotel',
+    id: String(detail.id || detail.Id),
+    name: detail.name || detail.Name || String(detail.id || detail.Id),
+    city: detail.cityName || detail.CityName || detail.city || detail.City || '',
+    address: detail.address || detail.Address || '',
+    stars: detail.star || detail.Star || detail.stars || detail.Stars || detail.category || detail.Category || 0,
+    rating: detail.rating || detail.Rating || 0,
+    reviewCount: detail.reviewCount || detail.ReviewCount || 0,
+    description: detail.description || detail.Description || '',
+    image,
+    images: images.length ? images : image ? [image] : [],
+    price: detail.minPrice || detail.MinPrice || 0,
+    amenities,
+    boardingType,
+    latitude: detail.latitude || detail.Latitude,
+    longitude: detail.longitude || detail.Longitude,
+    checkInTime: detail.checkInTime || detail.CheckInTime,
+    checkOutTime: detail.checkOutTime || detail.CheckOutTime,
+  }
+}
+
 export const api = {
   getCities: async (): Promise<City[]> => {
     await new Promise(resolve => setTimeout(resolve, 300))
@@ -396,8 +454,32 @@ export const api = {
   },
 
   getHotelDetails: async (hotelId: string): Promise<Hotel | null> => {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return mockHotels.find(h => h.id === hotelId) || null
+    try {
+      const response = await fetch('https://api.hotel.com.tn/hotels/detail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hotelId: parseInt(hotelId) }),
+      })
+      
+      if (!response.ok) {
+        console.error('Hotel details fetch failed:', response.status)
+        // Fallback to mock data for development
+        if (import.meta.env.DEV) {
+          return mockHotels.find(h => h.id === hotelId) || null
+        }
+        return null
+      }
+      
+      const data = await response.json()
+      return mapHotelDetailToHotel(data)
+    } catch (error) {
+      console.error('Error fetching hotel details:', error)
+      // Fallback to mock data for development
+      if (import.meta.env.DEV) {
+        return mockHotels.find(h => h.id === hotelId) || null
+      }
+      return null
+    }
   },
 
   getAvailableRooms: async (hotelId: string, roomCount?: number): Promise<Room[]> => {

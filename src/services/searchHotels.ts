@@ -135,22 +135,77 @@ export const mapSearchHotelsToList = (hotels: SearchHotel[]): Hotel[] =>
   })
 
 export const fetchSearchHotels = async (params: SearchRequest): Promise<SearchResponse> => {
-  const supabase = getSupabaseClient()
-  if (!supabase) {
-    throw new Error('Service de recherche non disponible. Configuration manquante.')
+  // Primary: Try Supabase Edge Function
+  try {
+    const supabase = getSupabaseClient()
+    if (supabase) {
+      const { data, error } = await supabase.functions.invoke<SearchResponse>('search-hotels', {
+        body: params,
+      })
+      
+      if (!error && data && Array.isArray(data.hotels)) {
+        return data
+      }
+      
+      // Log error but don't throw - we'll try fallback
+      if (error) {
+        console.warn('Supabase search failed, trying fallback:', error)
+      }
+    }
+  } catch (err) {
+    console.warn('Supabase search failed, trying fallback:', err)
   }
-  const { data, error } = await supabase.functions.invoke<SearchResponse>('search-hotels', {
-    body: params,
-  })
-
-  if (error) {
-    console.error('search-hotels error', error)
-    throw error
+  
+  // Fallback: Direct call to Cloudflare Worker
+  try {
+    const response = await fetch('https://api.hotel.com.tn/hotels/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      
+      // Handle specific error status codes
+      if (response.status === 400) {
+        // Parse validation errors
+        try {
+          const errorData = JSON.parse(errorText)
+          const errorMessage = errorData.message || errorData.error || 'Paramètres de recherche invalides'
+          
+          // Check for specific validation errors
+          if (errorMessage.toLowerCase().includes('city')) {
+            throw new Error('Ville invalide. Veuillez sélectionner une ville valide.')
+          }
+          if (errorMessage.toLowerCase().includes('date')) {
+            throw new Error('Dates invalides. Veuillez vérifier vos dates de séjour.')
+          }
+          throw new Error(errorMessage)
+        } catch (parseError) {
+          throw new Error('Paramètres de recherche invalides. Veuillez vérifier vos critères.')
+        }
+      }
+      
+      if (response.status >= 500) {
+        throw new Error('Service temporairement indisponible. Veuillez réessayer dans quelques instants.')
+      }
+      
+      throw new Error(`Erreur de recherche: ${response.status} ${errorText}`)
+    }
+    
+    const data = await response.json()
+    
+    if (!data || !Array.isArray(data.hotels)) {
+      throw new Error('Réponse de recherche invalide.')
+    }
+    
+    return data
+  } catch (err) {
+    // If it's already a formatted error, rethrow it
+    if (err instanceof Error) {
+      throw err
+    }
+    throw new Error('Erreur de connexion au service de recherche.')
   }
-
-  if (!data || !Array.isArray(data.hotels)) {
-    throw new Error('Réponse de recherche invalide.')
-  }
-
-  return data
 }
