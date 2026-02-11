@@ -14,6 +14,18 @@ import { getUserFriendlyErrorMessage } from '@/lib/edgeFunctionErrors'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { GuestDetails, Hotel, Room, SearchParams } from '@/types'
 
+/**
+ * Helper function to safely convert string or number to number
+ */
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const num = Number(value)
+    return isNaN(num) ? undefined : num
+  }
+  return undefined
+}
+
 export interface GuestBookingPayload {
   hotelId: string
   hotel: Hotel
@@ -73,17 +85,49 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
     throw new Error('Service de réservation non disponible. Configuration manquante.')
   }
 
+  // Transform searchParams to match backend contract
+  const cityIdNum = toNumber(bookingData.searchParams.cityId)
+  const backendSearchParams = {
+    cityId: cityIdNum,
+    checkIn: bookingData.searchParams.checkIn,
+    checkOut: bookingData.searchParams.checkOut,
+    rooms: bookingData.searchParams.rooms,
+    currency: bookingData.searchParams.currency || 'TND',
+  }
+
+  // Transform room to selectedOffer structure
+  const hotelIdNum = toNumber(bookingData.hotelId)
+  const roomIdNum = toNumber(bookingData.room.id)
+  const boardingIdNum = toNumber(bookingData.room.selectedBoarding || bookingData.room.boardingType)
+  
+  // Validate all required IDs are valid numbers
+  if (hotelIdNum === undefined || roomIdNum === undefined || boardingIdNum === undefined) {
+    throw new Error('Données de réservation invalides. Veuillez réessayer.')
+  }
+  
+  const selectedOffer = {
+    hotelId: hotelIdNum,
+    roomId: roomIdNum,
+    boardingId: boardingIdNum,
+  }
+
+  // Transform guestDetails to customer structure
+  const countryCode = bookingData.guestDetails.countryCode || ''
+  const phone = bookingData.guestDetails.phone || ''
+  
+  const customer = {
+    firstName: bookingData.guestDetails.firstName,
+    lastName: bookingData.guestDetails.lastName,
+    email: bookingData.guestDetails.email,
+    phone: `${countryCode}${phone}`.trim(),
+    nationality: bookingData.guestDetails.nationality,
+  }
+
   const payload = {
-    hotelId: bookingData.hotelId,
-    hotel: bookingData.hotel,
-    rooms: bookingData.rooms,
-    selectedOffer: bookingData.room,
-    searchParams: bookingData.searchParams,
-    guest: bookingData.guestDetails,
-    contact: {
-      email: bookingData.guestDetails.email,
-      phone: `${bookingData.guestDetails.countryCode}${bookingData.guestDetails.phone}`,
-    },
+    searchParams: backendSearchParams,
+    selectedOffer,
+    customer,
+    specialRequests: bookingData.guestDetails.specialRequests,
     guest_whatsapp_number: bookingData.guestDetails.guestWhatsAppNumber,
     nights: bookingData.nights,
     totalAmount: bookingData.totalAmount,
@@ -124,6 +168,36 @@ export const createGuestBooking = async (bookingData: GuestBookingPayload) => {
       if (error.status === 401 || error.status === 403) {
         throw new Error('Session expirée. Veuillez vous reconnecter et réessayer.')
       }
+      
+      // Parse specific validation errors (400/422)
+      if (error.status === 400 || error.status === 422) {
+        const errorBody = typeof error.context === 'object' ? error.context : null
+        const errorMessage = error.message || ''
+        
+        // Check for cityId validation errors
+        if (errorMessage.includes('cityId') || errorMessage.includes('city') || errorMessage.includes('Invalid city')) {
+          throw new Error('Sélection de ville invalide. Veuillez choisir une autre ville.')
+        }
+        
+        // Check for room availability errors from MyGo
+        if (errorMessage.includes('no longer available') || 
+            errorMessage.includes('not available') || 
+            errorMessage.includes('unavailable') ||
+            errorMessage.includes('sold out')) {
+          throw new Error('Cette chambre n\'est plus disponible. Veuillez sélectionner une autre chambre.')
+        }
+        
+        // Check for price mismatch errors
+        if (errorMessage.includes('price') || errorMessage.includes('amount')) {
+          throw new Error('Le prix a changé. Veuillez vérifier les détails et réessayer.')
+        }
+        
+        // Return the specific error message if available
+        if (errorMessage && errorMessage.trim()) {
+          throw new Error(errorMessage)
+        }
+      }
+      
       // Use user-friendly error message for Edge Function errors
       throw new Error(getUserFriendlyErrorMessage(error, 'booking'))
     }

@@ -58,6 +58,7 @@ export interface SearchParams {
   checkIn: Date | null
   checkOut: Date | null
   rooms: RoomGuests[]
+  currency?: string
 }
 
 export interface Room {
@@ -76,6 +77,14 @@ export interface Room {
   image: string
   selectedBoarding?: string
   roomIndex?: number
+}
+
+export interface SelectedOffer {
+  hotelId: number
+  roomId: number
+  boardingId: number
+  views?: number[]
+  supplements?: number[]
 }
 
 export interface GuestDetails {

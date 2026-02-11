@@ -51,6 +51,76 @@ export const getMyGoErrorMessage = (payload: unknown): string | null => {
   return null
 }
 
+/**
+ * Helper function to safely convert string or number to number
+ */
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const num = Number(value)
+    return isNaN(num) ? undefined : num
+  }
+  return undefined
+}
+
+/**
+ * Helper function to transform searchParams to backend format
+ */
+const transformSearchParams = (searchParams: unknown) => {
+  if (!searchParams || typeof searchParams !== 'object') return undefined
+  
+  const sp = searchParams as Record<string, unknown>
+  return {
+    cityId: sp.cityId ? toNumber(sp.cityId) : undefined,
+    checkIn: sp.checkIn,
+    checkOut: sp.checkOut,
+    rooms: sp.rooms,
+    currency: (typeof sp.currency === 'string' ? sp.currency : undefined) || 'TND',
+  }
+}
+
+/**
+ * Helper function to transform room to selectedOffer format
+ */
+const transformSelectedOffer = (hotelId: unknown, room: unknown) => {
+  if (!hotelId || !room || typeof room !== 'object') return undefined
+  
+  const r = room as Record<string, unknown>
+  const hotelIdNum = toNumber(hotelId)
+  const roomIdNum = toNumber(r.id)
+  const boardingIdNum = toNumber(r.selectedBoarding || r.boardingType)
+  
+  // Only return if all IDs are valid numbers (check for undefined, not falsiness)
+  if (hotelIdNum !== undefined && roomIdNum !== undefined && boardingIdNum !== undefined) {
+    return {
+      hotelId: hotelIdNum,
+      roomId: roomIdNum,
+      boardingId: boardingIdNum,
+    }
+  }
+  
+  return undefined
+}
+
+/**
+ * Helper function to transform guestDetails to customer format
+ */
+const transformCustomer = (guestDetails: unknown) => {
+  if (!guestDetails || typeof guestDetails !== 'object') return undefined
+  
+  const gd = guestDetails as Record<string, unknown>
+  const countryCode = typeof gd.countryCode === 'string' ? gd.countryCode : ''
+  const phone = typeof gd.phone === 'string' ? gd.phone : ''
+  
+  return {
+    firstName: gd.firstName,
+    lastName: gd.lastName,
+    email: gd.email,
+    phone: `${countryCode}${phone}`.trim(),
+    nationality: gd.nationality,
+  }
+}
+
 const invokeInventorySyncAction = async <T>(
   payload: InventorySyncPayload,
   headers?: Record<string, string>
@@ -191,9 +261,24 @@ export const prebookRoom = async (
   payload: InventorySyncPayload
 ): Promise<PrebookResponse> => {
   try {
+    // Transform payload if it contains old structure
+    const transformedPayload = { ...payload }
+    
+    // Transform searchParams if present
+    const searchParams = transformSearchParams(payload.searchParams)
+    if (searchParams) {
+      transformedPayload.searchParams = searchParams
+    }
+    
+    // Transform room to selectedOffer if present
+    const selectedOffer = transformSelectedOffer(payload.hotelId, payload.room)
+    if (selectedOffer) {
+      transformedPayload.selectedOffer = selectedOffer
+    }
+    
     const data = await invokeInventorySyncAction<PrebookResponse>({
       action: 'prebook',
-      ...payload,
+      ...transformedPayload,
     })
     
     if (data && typeof data === 'object') {
@@ -221,9 +306,32 @@ export const initiateCheckout = async (
   payload: InventorySyncPayload
 ): Promise<CheckoutInitiateResponse> => {
   try {
+    // Transform payload if it contains old structure
+    const transformedPayload = { ...payload }
+    
+    // Transform searchParams if present
+    const searchParams = transformSearchParams(payload.searchParams)
+    if (searchParams) {
+      transformedPayload.searchParams = searchParams
+    }
+    
+    // Transform room/rooms to selectedOffer if present
+    if (payload.rooms && Array.isArray(payload.rooms) && payload.rooms.length > 0) {
+      const selectedOffer = transformSelectedOffer(payload.hotelId, payload.rooms[0])
+      if (selectedOffer) {
+        transformedPayload.selectedOffer = selectedOffer
+      }
+    }
+    
+    // Transform guestDetails to customer if present
+    const customer = transformCustomer(payload.guestDetails)
+    if (customer) {
+      transformedPayload.customer = customer
+    }
+    
     const data = await invokeInventorySyncAction<CheckoutInitiateResponse>({
       action: 'checkout-initiate',
-      ...payload,
+      ...transformedPayload,
     })
     
     if (data && typeof data === 'object') {
