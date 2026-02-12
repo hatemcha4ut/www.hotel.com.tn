@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
 import { Hero } from '@/components/Hero'
 import { FeaturedDestinations } from '@/components/FeaturedDestinations'
 import { WhyBookWithUs } from '@/components/WhyBookWithUs'
@@ -8,9 +7,13 @@ import { ResultsList } from '@/components/ResultsList'
 import { Hotel } from '@/types'
 import type { SearchHotelsResult } from '@/services/searchHotels'
 import { fetchSearchHotels, mapSearchHotelsToList } from '@/services/searchHotels'
+ copilot/resolve-merge-conflicts
+import { format, addDays } from 'date-fns'
+
  copilot/fix-frontend-issues
 import { format, addDays } from 'date-fns'
 
+ main
 import { useApp } from '@/contexts/AppContext'
  main
 
@@ -33,7 +36,10 @@ export function HomePage({ onSearch, onViewHotel, onResultsFound }: HomePageProp
   useEffect(() => {
     const loadPopularHotels = async () => {
       try {
+ copilot/resolve-merge-conflicts
+
  copilot/fix-frontend-issues
+ main
         // Fetch hotels from Tunis for the popular hotels section
         const checkIn = format(addDays(new Date(), POPULAR_HOTELS_CHECKIN_DAYS), 'yyyy-MM-dd')
         const checkOut = format(addDays(new Date(), POPULAR_HOTELS_CHECKOUT_DAYS), 'yyyy-MM-dd')
@@ -42,6 +48,8 @@ export function HomePage({ onSearch, onViewHotel, onResultsFound }: HomePageProp
           cityId: POPULAR_HOTELS_CITY_ID,
           checkIn,
           checkOut,
+ copilot/resolve-merge-conflicts
+
           rooms: [{ adults: 2 }],
         })
         
@@ -62,15 +70,19 @@ export function HomePage({ onSearch, onViewHotel, onResultsFound }: HomePageProp
           cityId: 1, // Tunis
           checkIn: format(checkIn, 'yyyy-MM-dd'),
           checkOut: format(checkOut, 'yyyy-MM-dd'),
+ main
           rooms: [{ adults: 2 }],
-        }
-
-        const response = await fetchSearchHotels(payload)
+        })
+        
         const hotels = mapSearchHotelsToList(response.hotels)
-        setPopularHotels(hotels.slice(0, 6))
+        setPopularHotels(hotels.slice(0, POPULAR_HOTELS_COUNT))
       } catch (error) {
         console.error('Error loading popular hotels:', error)
+ copilot/resolve-merge-conflicts
+        // Don't show error to user - just leave empty state
+
         // Don't show error to user, just show empty list
+ main
  main
         setPopularHotels([])
       } finally {
