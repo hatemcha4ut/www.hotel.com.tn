@@ -46,6 +46,11 @@ export function useCities(): UseCitiesResult {
 
   const load = useCallback(async (force = false) => {
     if (cachedCities && !force) {
+      if (import.meta.env.DEV) {
+        console.log('[useCities] Using existing cached cities (skipping fetch)', {
+          count: cachedCities.length,
+        })
+      }
       setCities(cachedCities)
       setIsLoading(false)
       setUsingFallback(false)
@@ -64,6 +69,11 @@ export function useCities(): UseCitiesResult {
       fetchPromise = null
       setCities(results)
       setUsingFallback(false)
+      if (import.meta.env.DEV) {
+        console.log('[useCities] Cities fetched successfully', {
+          count: results.length,
+        })
+      }
     } catch (err) {
       fetchPromise = null
       
@@ -72,7 +82,10 @@ export function useCities(): UseCitiesResult {
       // after having successfully fetched cities before
       if (cachedCities && cachedCities.length > 0) {
         if (import.meta.env.DEV) {
-          console.warn('[useCities] Fetch failed but using existing cached cities (not fallback):', err)
+          console.warn('[useCities] Fetch failed but using existing cached cities (not fallback):', {
+            error: err instanceof Error ? err.message : err,
+            cachedCount: cachedCities.length,
+          })
         }
         setCities(cachedCities)
         setUsingFallback(false)
@@ -80,7 +93,10 @@ export function useCities(): UseCitiesResult {
         // Fallback to static tunisianCities from constants only if no cache exists
         // This is a graceful degradation, not an error from the user's perspective
         if (import.meta.env.DEV) {
-          console.warn('[useCities] Failed to fetch cities after retries, using fallback tunisianCities:', err)
+          console.warn('[useCities] Failed to fetch cities after retries, using fallback tunisianCities:', {
+            error: err instanceof Error ? err.message : err,
+            fallbackCount: tunisianCities.length,
+          })
         }
         setCities(tunisianCities)
         setUsingFallback(true)
