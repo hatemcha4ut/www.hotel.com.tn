@@ -28,6 +28,9 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      # Using --legacy-peer-deps due to conflict between eslint@10.0.0 and eslint-plugin-react-hooks@7.0.1
+      # eslint-plugin-react-hooks requires ^9.0.0 but package.json has v10.0.0
+      # This is a known temporary incompatibility that will be resolved when plugins update
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 

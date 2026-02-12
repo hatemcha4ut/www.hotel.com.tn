@@ -4,11 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Envelope, Phone, LockKey } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { getSupabaseClient } from '@/lib/supabase'
-import type { User } from '@supabase/supabase-js'
 import { buildAuthUser, type AuthUser } from '@/lib/auth'
 
 interface AuthDialogProps {
@@ -18,8 +15,6 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) {
-  const [verificationMethod, setVerificationMethod] = useState<'email' | 'whatsapp'>('email')
-  const [step, setStep] = useState<'auth' | 'verify'>('auth')
   const [loginData, setLoginData] = useState({ email: '', password: '' })
   const [registerData, setRegisterData] = useState({
     firstName: '',
@@ -29,12 +24,6 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
     password: '',
     confirmPassword: '',
   })
-  const [verificationCode, setVerificationCode] = useState('')
-  const [generatedCode, setGeneratedCode] = useState('')
-
-  const generateCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString()
-  }
 
   const handleLogin = async () => {
     if (!loginData.email || !loginData.password) {
@@ -124,58 +113,15 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
     }
   }
 
-  const handleVerify = async () => {
-    // This function is kept for backwards compatibility but not used in production flow
-    if (verificationCode === generatedCode) {
-      try {
-        const supabase = getSupabaseClient()
-        if (!supabase) {
-          toast.error('Service d\'authentification non disponible. Veuillez réessayer plus tard.')
-          return
-        }
-        const { data, error } = await supabase.auth.signUp({
-          email: registerData.email,
-          password: registerData.password,
-          options: {
-            data: {
-              first_name: registerData.firstName,
-              last_name: registerData.lastName,
-              phone: registerData.phone,
-            },
-          },
-        })
-        if (error) {
-          throw error
-        }
-        const authUser = buildAuthUser(data.user)
-        if (!authUser) {
-          throw new Error('Utilisateur non disponible.')
-        }
-        onAuthSuccess?.(authUser)
-        toast.success('Compte créé avec succès!')
-        onOpenChange(false)
-        setStep('auth')
-        setVerificationCode('')
-        setGeneratedCode('')
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Erreur lors de la création du compte')
-      }
-    } else {
-      toast.error('Code de vérification incorrect')
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        {step === 'auth' ? (
-          <>
-            <DialogHeader className="space-y-2">
-              <DialogTitle className="text-xl sm:text-2xl">Bienvenue</DialogTitle>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Connectez-vous ou créez un compte
-              </p>
-            </DialogHeader>
+        <DialogHeader className="space-y-2">
+          <DialogTitle className="text-xl sm:text-2xl">Bienvenue</DialogTitle>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Connectez-vous ou créez un compte
+          </p>
+        </DialogHeader>
 
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 h-11">
@@ -292,26 +238,6 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
                       className="h-11"
                     />
                   </div>
-
-                  <div className="space-y-3 pt-2">
-                    <Label className="text-sm font-medium">Méthode de vérification</Label>
-                    <RadioGroup value={verificationMethod} onValueChange={(v) => setVerificationMethod(v as 'email' | 'whatsapp')}>
-                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
-                        <RadioGroupItem value="email" id="email" />
-                        <Label htmlFor="email" className="flex items-center gap-2 cursor-pointer flex-1">
-                          <Envelope size={20} className="text-primary" weight="duotone" />
-                          <span className="text-sm">Email</span>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
-                        <RadioGroupItem value="whatsapp" id="whatsapp" />
-                        <Label htmlFor="whatsapp" className="flex items-center gap-2 cursor-pointer flex-1">
-                          <Phone size={20} className="text-accent" weight="duotone" />
-                          <span className="text-sm">WhatsApp</span>
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
                 </div>
 
                 <Button className="w-full h-11" size="lg" onClick={handleRegister}>
@@ -319,44 +245,6 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
                 </Button>
               </TabsContent>
             </Tabs>
-          </>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-xl sm:text-2xl">Vérification du code</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6">
-              <div className="text-center py-6">
-                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <LockKey size={40} className="text-primary" weight="duotone" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Un code de vérification à 6 chiffres a été envoyé<br />
-                  {verificationMethod === 'email' ? 'à votre adresse email' : 'via WhatsApp'}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="code" className="text-sm font-medium">Code de vérification</Label>
-                <Input
-                  id="code"
-                  placeholder="000000"
-                  maxLength={6}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                  className="h-12 text-center text-xl tracking-widest font-semibold"
-                />
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button variant="outline" onClick={() => setStep('auth')} className="flex-1 h-11">
-                  Retour
-                </Button>
-                <Button onClick={handleVerify} className="flex-1 h-11" disabled={verificationCode.length !== 6}>
-                  Vérifier le code
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
       </DialogContent>
     </Dialog>
   )
