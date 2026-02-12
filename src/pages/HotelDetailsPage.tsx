@@ -39,7 +39,7 @@ interface HotelDetailsPageProps {
 }
 
 export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms, onNewSearch }: HotelDetailsPageProps) {
-  const { searchParams, setSearchParams } = useApp()
+  const { searchParams, setSearchParams, searchResults } = useApp()
   const [hotel, setHotel] = useState<Hotel | null>(null)
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,12 +58,39 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms, onN
     const loadHotelDetails = async () => {
       setLoading(true)
       try {
+        // First try to get hotel from search results in context
+        const hotelFromSearch = searchResults?.hotels?.find(h => h.id === hotelId)
+        
+        // Load hotel details from API (always fetch for complete data)
         const hotelData = await api.getHotelDetails(hotelId)
         if (hotelData) {
           setHotel(hotelData)
           setSelectedImage(hotelData.image)
+        } else if (hotelFromSearch) {
+          // Fallback to search result if API fails
+          setHotel(hotelFromSearch)
+          setSelectedImage(hotelFromSearch.image)
         }
-        const roomsData = await api.getAvailableRooms(hotelId, searchParams.rooms.length)
+        
+        // Try to get rooms from multiple sources:
+        // 1. From search results context (if available and has rooms)
+        // 2. From inventory API
+        let roomsData: Room[] = []
+        
+        if (hotelFromSearch?.rooms && hotelFromSearch.rooms.length > 0) {
+          console.log('Using rooms from search results context')
+          roomsData = hotelFromSearch.rooms
+        } else {
+          try {
+            console.log('Fetching rooms from inventory API')
+            roomsData = await api.getAvailableRooms(hotelId, searchParams.rooms.length)
+          } catch (error) {
+            console.warn('Failed to load rooms from inventory API:', error)
+            // If API fails and we have no rooms, show empty state
+            roomsData = []
+          }
+        }
+        
         setRooms(roomsData)
         
         const initialBoardings: Record<string, string> = {}
@@ -93,7 +120,7 @@ export function HotelDetailsPage({ hotelId, onBack, onBookRoom, onBookRooms, onN
       }
     }
     loadHotelDetails()
-  }, [hotelId, searchParams.rooms.length])
+  }, [hotelId, searchParams.rooms.length, searchResults])
 
   const handleBoardingChange = (roomId: string, boardingType: string) => {
     if (applySameBoardingToAll) {

@@ -99,6 +99,56 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
       if (!hotelId) {
         throw new Error('Identifiant de l’hôtel manquant. Veuillez revenir à la fiche hôtel.')
       }
+
+      // Validate hotelId is a valid positive number
+      const hotelIdNum = Number(hotelId)
+      if (isNaN(hotelIdNum) || hotelIdNum <= 0) {
+        throw new Error("Identifiant de l'hôtel invalide.")
+      }
+
+      // Validate cityId is a valid positive number
+      if (!searchParams.cityId) {
+        throw new Error('Identifiant de la ville manquant. Veuillez effectuer une nouvelle recherche.')
+      }
+      const cityIdNum = Number(searchParams.cityId)
+      if (isNaN(cityIdNum) || cityIdNum <= 0) {
+        throw new Error('Identifiant de la ville invalide.')
+      }
+
+      // Validate room ID exists and is a valid positive number
+      if (!room?.id) {
+        throw new Error('Identifiant de la chambre manquant.')
+      }
+      const roomIdNum = Number(room.id)
+      if (isNaN(roomIdNum) || roomIdNum <= 0) {
+        throw new Error('Identifiant de la chambre invalide.')
+      }
+
+      // Validate selectedBoarding exists
+      const selectedBoarding = roomBoardings?.[0] || room.selectedBoarding || room.boardingType
+      if (!selectedBoarding) {
+        throw new Error('Type de pension manquant. Veuillez sélectionner une option de pension.')
+      }
+
+      // Validate check-in and check-out dates exist
+      if (!searchParams.checkIn || !searchParams.checkOut) {
+        throw new Error('Dates de séjour manquantes. Veuillez effectuer une nouvelle recherche.')
+      }
+
+      // Validate guest details required fields
+      if (!guestDetails.firstName || !guestDetails.firstName.trim()) {
+        throw new Error('Le prénom est requis.')
+      }
+      if (!guestDetails.lastName || !guestDetails.lastName.trim()) {
+        throw new Error('Le nom est requis.')
+      }
+      if (!guestDetails.email || !guestDetails.email.trim()) {
+        throw new Error("L'adresse e-mail est requise.")
+      }
+      if (!guestDetails.nationality || !guestDetails.nationality.trim()) {
+        throw new Error('La nationalité est requise.')
+      }
+
       // Call initiateCheckout first to check wallet credit
       setCheckingOut(true)
       const checkoutResponse = await initiateCheckout({
