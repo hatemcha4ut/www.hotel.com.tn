@@ -66,15 +66,27 @@ export function useCities(): UseCitiesResult {
       setUsingFallback(false)
     } catch (err) {
       fetchPromise = null
-      // Fallback to static tunisianCities from constants
-      // This is a graceful degradation, not an error from the user's perspective
-      setCities(tunisianCities)
-      setUsingFallback(true)
-      // Don't set error state since we have working fallback data
-      // The app functions correctly with static cities
-      if (import.meta.env.DEV) {
-        console.warn('[useCities] Failed to fetch cities after retries, using fallback:', err)
+      
+      // Only fallback to tunisianCities if we don't have cached cities
+      // This prevents falling back to incorrect IDs when we receive 304 or other errors
+      // after having successfully fetched cities before
+      if (cachedCities && cachedCities.length > 0) {
+        if (import.meta.env.DEV) {
+          console.warn('[useCities] Fetch failed but using existing cached cities (not fallback):', err)
+        }
+        setCities(cachedCities)
+        setUsingFallback(false)
+      } else {
+        // Fallback to static tunisianCities from constants only if no cache exists
+        // This is a graceful degradation, not an error from the user's perspective
+        if (import.meta.env.DEV) {
+          console.warn('[useCities] Failed to fetch cities after retries, using fallback tunisianCities:', err)
+        }
+        setCities(tunisianCities)
+        setUsingFallback(true)
       }
+      // Don't set error state since we have working data (cached or fallback)
+      // The app functions correctly with either
     } finally {
       setIsLoading(false)
     }
