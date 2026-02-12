@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import { getSupabaseClient } from '@/lib/supabase'
+import { getApiBaseUrl } from '@/lib/edgeFunctionErrors'
 import type { Hotel, RoomGuests, SearchParams } from '@/types'
 
 type CurrencyCode = 'TND' | 'EUR' | 'USD'
@@ -135,30 +136,49 @@ export const mapSearchHotelsToList = (hotels: SearchHotel[]): Hotel[] =>
   })
 
 export const fetchSearchHotels = async (params: SearchRequest): Promise<SearchResponse> => {
+  const workerUrl = `${getApiBaseUrl()}/hotels/search`
+  
   // Primary: Try Supabase Edge Function
+  let supabaseAttempted = false
   try {
     const supabase = getSupabaseClient()
     if (supabase) {
+      supabaseAttempted = true
       const { data, error } = await supabase.functions.invoke<SearchResponse>('search-hotels', {
         body: params,
       })
       
+      // Only return if we have valid data AND no error
+      // This ensures FunctionsHttpError and other non-2xx errors don't stop the request
       if (!error && data && Array.isArray(data.hotels)) {
+        console.log('Search completed via Supabase Edge Function')
         return data
       }
       
-      // Log error but don't throw - we'll try fallback
+      // Log error and continue to fallback - don't throw or return early
       if (error) {
-        console.warn('Supabase search failed, trying fallback:', error)
+        console.warn('Supabase Edge Function returned error, using fallback:', error.message || error)
+      } else {
+        console.warn('Supabase Edge Function returned invalid data, using fallback')
       }
+    } else {
+      console.log('Supabase client not available, using fallback')
     }
   } catch (err) {
-    console.warn('Supabase search failed, trying fallback:', err)
+    // Catch any unexpected errors (network issues, etc.) and continue to fallback
+    console.warn('Supabase Edge Function failed with exception, using fallback:', err instanceof Error ? err.message : err)
+  }
+  
+  // Log when we're using the fallback
+  if (supabaseAttempted) {
+    console.log('Attempting Cloudflare Worker fallback at', workerUrl)
+  } else {
+    console.log('Using Cloudflare Worker at', workerUrl)
   }
   
   // Fallback: Direct call to Cloudflare Worker
   try {
-    const response = await fetch('https://api.hotel.com.tn/hotels/search', {
+    const response = await fetch(workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
