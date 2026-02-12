@@ -132,7 +132,7 @@ export const mapSearchHotelsToList = (hotels: SearchHotel[]): Hotel[] =>
       boardingType,
       onRequestOnly,
       hasPrice: minPrice !== undefined,
-      rooms: rooms.length > 0 ? rooms : undefined,  // Include rooms from search results
+      rooms: rooms.length > 0 ? rooms : undefined,  // Include rooms from search results when available
     }
   })
 
