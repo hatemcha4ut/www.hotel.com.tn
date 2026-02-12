@@ -7,8 +7,15 @@ import { ResultsList } from '@/components/ResultsList'
 import { Hotel } from '@/types'
 import type { SearchHotelsResult } from '@/services/searchHotels'
 import { fetchSearchHotels, mapSearchHotelsToList } from '@/services/searchHotels'
+ copilot/resolve-merge-conflicts
 import { format, addDays } from 'date-fns'
+
+ copilot/fix-frontend-issues
+import { format, addDays } from 'date-fns'
+
+ main
 import { useApp } from '@/contexts/AppContext'
+ main
 
 interface HomePageProps {
   onSearch: () => void
@@ -29,6 +36,10 @@ export function HomePage({ onSearch, onViewHotel, onResultsFound }: HomePageProp
   useEffect(() => {
     const loadPopularHotels = async () => {
       try {
+ copilot/resolve-merge-conflicts
+
+ copilot/fix-frontend-issues
+ main
         // Fetch hotels from Tunis for the popular hotels section
         const checkIn = format(addDays(new Date(), POPULAR_HOTELS_CHECKIN_DAYS), 'yyyy-MM-dd')
         const checkOut = format(addDays(new Date(), POPULAR_HOTELS_CHECKOUT_DAYS), 'yyyy-MM-dd')
@@ -37,6 +48,8 @@ export function HomePage({ onSearch, onViewHotel, onResultsFound }: HomePageProp
           cityId: POPULAR_HOTELS_CITY_ID,
           checkIn,
           checkOut,
+ copilot/resolve-merge-conflicts
+
           rooms: [{ adults: 2 }],
         })
         
@@ -45,6 +58,32 @@ export function HomePage({ onSearch, onViewHotel, onResultsFound }: HomePageProp
       } catch (error) {
         console.error('Error loading popular hotels:', error)
         // Don't show error to user - just leave empty state
+
+        // Search for hotels in Tunis (cityId=1) for next 7 days
+        const today = new Date()
+        const checkIn = new Date(today)
+        checkIn.setDate(today.getDate() + 7)
+        const checkOut = new Date(checkIn)
+        checkOut.setDate(checkIn.getDate() + 3)
+
+        const payload = {
+          cityId: 1, // Tunis
+          checkIn: format(checkIn, 'yyyy-MM-dd'),
+          checkOut: format(checkOut, 'yyyy-MM-dd'),
+ main
+          rooms: [{ adults: 2 }],
+        })
+        
+        const hotels = mapSearchHotelsToList(response.hotels)
+        setPopularHotels(hotels.slice(0, POPULAR_HOTELS_COUNT))
+      } catch (error) {
+        console.error('Error loading popular hotels:', error)
+ copilot/resolve-merge-conflicts
+        // Don't show error to user - just leave empty state
+
+        // Don't show error to user, just show empty list
+ main
+ main
         setPopularHotels([])
       } finally {
         setLoading(false)

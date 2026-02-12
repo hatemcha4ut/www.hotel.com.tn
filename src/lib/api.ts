@@ -210,9 +210,82 @@ export const api = {
     }
   },
 
+ copilot/resolve-merge-conflicts
   getAvailableRooms: async (hotelId: string, roomCount?: number): Promise<Room[]> => {
     console.warn('api.getAvailableRooms() is deprecated. Room data should come from inventory search.')
+
+ copilot/fix-frontend-issues
+  getAvailableRooms: async (hotelId: string, roomCount?: number): Promise<Room[]> => {
+    console.warn('api.getAvailableRooms() is deprecated. Room data should come from inventory search.')
+
+    try {
+      // Validate hotelId is numeric and positive
+      const numericHotelId = Number(hotelId)
+      if (!Number.isFinite(numericHotelId) || numericHotelId <= 0) {
+        console.error(`Invalid hotel ID for getAvailableRooms: ${hotelId}`)
+        return []
+      }
+
+      const apiBaseUrl = getApiBaseUrl()
+
+      const payload: { hotelId: number; roomCount?: number } = {
+        hotelId: numericHotelId,
+      }
+
+      if (roomCount !== undefined) {
+        const numericRoomCount = Number(roomCount)
+        if (Number.isFinite(numericRoomCount) && numericRoomCount > 0) {
+          payload.roomCount = numericRoomCount
+        } else {
+          console.warn(`Ignoring invalid roomCount for getAvailableRooms: ${roomCount}`)
+        }
+      }
+
+      const response = await fetch(`${apiBaseUrl}/inventory/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.error(`No rooms found for hotel ${hotelId}`)
+          return []
+        }
+        const errorMessage = await parseHttpError(response)
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+
+      if (!data) {
+        return []
+      }
+
+      // Accept both a plain array of rooms, or an object with a `rooms` array
+      if (Array.isArray(data)) {
+        return data as Room[]
+      }
+
+      if (Array.isArray((data as any).rooms)) {
+        return (data as any).rooms as Room[]
+      }
+
+      console.error('Unexpected response format for getAvailableRooms:', data)
+      return []
+    } catch (err) {
+      console.error('Error fetching available rooms:', err)
+      throw new Error(getUserFriendlyErrorMessage(err, 'available-rooms'))
+    }
+
+  getAvailableRooms: async (hotelId: string): Promise<Room[]> => {
+    // TODO: This should also call backend API in future
+    // For now, return empty array - rooms are in search results
+ main
     return []
+ main
   },
 
   createBooking: async (bookingData: any): Promise<{ reference: string }> => {
