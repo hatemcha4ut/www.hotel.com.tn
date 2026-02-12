@@ -136,47 +136,80 @@ export const mapSearchHotelsToList = (hotels: SearchHotel[]): Hotel[] =>
 
 export const fetchSearchHotels = async (params: SearchRequest): Promise<SearchResponse> => {
   // Primary: Try Supabase Edge Function
-  const supabase = getSupabaseClient()
-  if (supabase) {
-    try {
+  try {
+    const supabase = getSupabaseClient()
+    if (supabase) {
       const { data, error } = await supabase.functions.invoke<SearchResponse>('search-hotels', {
         body: params,
       })
+      
       if (!error && data && Array.isArray(data.hotels)) {
-        console.log('[Search] Success via Supabase Edge Function')
         return data
       }
-    } catch (err) {
-      console.warn('[Search] Supabase Edge Function failed, trying fallback:', err)
+      
+      // Log error but don't throw - we'll try fallback
+      if (error) {
+        console.warn('Supabase search failed, trying fallback:', error)
+      }
     }
+  } catch (err) {
+    console.warn('Supabase search failed, trying fallback:', err)
   }
-
-  // Fallback: Direct call to Cloudflare Worker
-  console.log('[Search] Using Cloudflare Worker fallback')
-  const response = await fetch('https://api.hotel.com.tn/hotels/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    let userMessage = 'Une erreur est survenue lors de la recherche.'
-    
-    if (response.status === 400) {
-      userMessage = 'Paramètres de recherche invalides. Vérifiez votre sélection.'
-    } else if (response.status >= 500) {
-      userMessage = 'Service temporairement indisponible. Veuillez réessayer dans quelques instants.'
-    }
-    
-    throw new Error(userMessage)
-  }
-
-  const data = await response.json()
   
-  if (!data || !Array.isArray(data.hotels)) {
-    throw new Error('Réponse de recherche invalide.')
+  // Fallback: Direct call to Cloudflare Worker
+  try {
+    const response = await fetch('https://api.hotel.com.tn/hotels/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      
+      // Handle specific error status codes
+      if (response.status === 400) {
+        // Parse validation errors
+        try {
+          const errorData = JSON.parse(errorText)
+          const errorMessage = errorData.message || errorData.error || 'Paramètres de recherche invalides'
+          
+          // Check for specific validation errors using more precise patterns
+          const lowerMessage = errorMessage.toLowerCase()
+          if (lowerMessage.includes('cityid') || lowerMessage.includes('city id') || 
+              lowerMessage.includes('invalid city') || lowerMessage.includes('ville invalide')) {
+            throw new Error('Ville invalide. Veuillez sélectionner une ville valide.')
+          }
+          if (lowerMessage.includes('checkin') || lowerMessage.includes('checkout') || 
+              lowerMessage.includes('check-in') || lowerMessage.includes('check-out') ||
+              lowerMessage.includes('invalid date') || lowerMessage.includes('date invalide')) {
+            throw new Error('Dates invalides. Veuillez vérifier vos dates de séjour.')
+          }
+          throw new Error(errorMessage)
+        } catch (parseError) {
+          throw new Error('Paramètres de recherche invalides. Veuillez vérifier vos critères.')
+        }
+      }
+      
+      if (response.status >= 500) {
+        throw new Error('Service temporairement indisponible. Veuillez réessayer dans quelques instants.')
+      }
+      
+      throw new Error(`Erreur de recherche: ${response.status} ${errorText}`)
+    }
+    
+    const data = await response.json()
+    
+    if (!data || !Array.isArray(data.hotels)) {
+      throw new Error('Réponse de recherche invalide.')
+    }
+    
+    return data
+  } catch (err) {
+    // If it's already a formatted error, rethrow it
+    if (err instanceof Error) {
+      throw err
+    }
+    throw new Error('Erreur de connexion au service de recherche.')
   }
-
-  return data
 }

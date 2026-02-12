@@ -32,4 +32,9 @@ pids
 .devcontainer/
 
 .spark-workbench-id
+ copilot/fix-frontend-issues
+
+# Generated build files
+
+ main
 public/version.json
