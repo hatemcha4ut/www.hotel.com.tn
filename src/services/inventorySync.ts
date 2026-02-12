@@ -146,10 +146,9 @@ const invokeInventorySyncAction = async <T>(
   return data
 }
 
-// Module-level cache for cities to handle browser-cached responses
-// Note: Browser fetch() API handles 304 Not Modified internally and never exposes it to JS.
-// When 304 occurs, browser returns 200 with cached data, which may fail validation.
-// This cache ensures we can fall back to last known good data in such cases.
+// Module-level cache for cities to handle 304 Not Modified responses and errors
+// When server returns HTTP 304 Not Modified, we reuse this cached data
+// Also handles cases where fetch/parsing fails but we have previously cached data
 let cachedCitiesData: City[] | null = null
 
 export const fetchCities = async (): Promise<City[]> => {
@@ -163,6 +162,22 @@ export const fetchCities = async (): Promise<City[]> => {
         'Accept': 'application/json',
       },
     })
+
+    // Handle 304 Not Modified: reuse cached cities if available
+    if (response.status === 304) {
+      if (cachedCitiesData) {
+        if (import.meta.env.DEV) {
+          console.log('[Inventory] HTTP 304 Not Modified - using cached cities', {
+            cachedCount: cachedCitiesData.length,
+            reason: 'Server returned 304, data unchanged',
+          })
+        }
+        return cachedCitiesData
+      }
+      // If we don't have cached data but got 304, this is unusual
+      // Treat as error and let useCities handle fallback
+      throw new Error('HTTP 304 but no cached data available')
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -203,13 +218,13 @@ export const fetchCities = async (): Promise<City[]> => {
     return cities
   } catch (error) {
     // If fetch or parsing fails but we have cached data, use it
-    // This handles cases where browser returns 304 as 200 with incomplete/cached response
+    // This handles cases where browser cache causes parsing issues or network errors
     if (cachedCitiesData) {
       if (import.meta.env.DEV) {
         console.log('[Inventory] Fetch/parse failed, using cached cities from module cache', {
           error: error instanceof Error ? error.message : error,
           cachedCount: cachedCitiesData.length,
-          reason: 'Browser may have returned 304 Not Modified as 200 with cached data',
+          reason: 'Reusing cached cities due to fetch/parse error (might be due to browser cache or network issue)',
         })
       }
       return cachedCitiesData
