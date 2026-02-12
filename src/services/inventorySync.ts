@@ -204,7 +204,7 @@ export const fetchCities = async (): Promise<City[]> => {
   } catch (error) {
     // If fetch or parsing fails but we have cached data, use it
     // This handles cases where browser returns 304 as 200 with incomplete/cached response
-    if (cachedCitiesData && cachedCitiesData.length > 0) {
+    if (cachedCitiesData) {
       if (import.meta.env.DEV) {
         console.log('[Inventory] Fetch/parse failed, using cached cities from module cache', {
           error: error instanceof Error ? error.message : error,
