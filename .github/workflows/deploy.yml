@@ -32,7 +32,7 @@ jobs:
       # eslint-plugin-react-hooks requires ^9.0.0 but package.json has v10.0.0
       # This is a known temporary incompatibility that will be resolved when plugins update
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Build project
         run: npm run build
