@@ -132,23 +132,69 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
           return
         }
 
-        const supabase = getSupabaseClient()
-        if (!supabase) {
-          throw new Error('Service non disponible. Configuration manquante.')
+        // Primary: Try Supabase Edge Function
+        let supabaseAttempted = false
+        try {
+          const supabase = getSupabaseClient()
+          if (supabase) {
+            supabaseAttempted = true
+            const { data, error } = await supabase.functions.invoke('get-confirmation', {
+              body: { confirmation_token: token },
+            })
+            
+            if (!error && data) {
+              console.log('Confirmation loaded via Supabase Edge Function')
+              setBookingData(data)
+              return
+            }
+            
+            if (error) {
+              console.warn('Supabase Edge Function returned error, trying backend fallback:', error.message || error)
+            }
+          } else {
+            console.log('Supabase client not available, using backend fallback')
+          }
+        } catch (err) {
+          console.warn('Supabase Edge Function failed, trying backend fallback:', err instanceof Error ? err.message : err)
         }
-        const { data, error } = await supabase.functions.invoke('get-confirmation', {
-          body: { confirmation_token: token },
-        })
-        if (error) {
-          throw new Error(error?.message || 'Erreur lors de la récupération de la réservation.')
+        
+        // Fallback: Try backend confirmation endpoint
+        if (supabaseAttempted) {
+          console.log('Attempting backend confirmation API fallback')
         }
-        if (data) {
-          setBookingData(data)
+        
+        try {
+          // Use backend confirmation endpoint if available
+          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.hotel.com.tn'
+          const response = await fetch(`${apiBaseUrl}/booking/confirmation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirmation_token: token }),
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            if (data) {
+              console.log('Confirmation loaded via backend API')
+              setBookingData(data)
+              return
+            }
+          } else if (response.status === 404) {
+            throw new Error('Réservation non trouvée. Veuillez vérifier votre lien de confirmation.')
+          } else {
+            throw new Error('Erreur lors de la récupération de la réservation.')
+          }
+        } catch (fallbackError) {
+          console.error('Backend fallback also failed:', fallbackError)
+          throw fallbackError
         }
+        
       } catch (error) {
         console.error('Error loading booking data:', error)
         setLoadError(
-          'Impossible de charger la réservation. Veuillez vérifier votre lien de confirmation ou contacter le support.'
+          error instanceof Error && error.message 
+            ? error.message 
+            : 'Impossible de charger la réservation. Veuillez vérifier votre lien de confirmation ou contacter le support.'
         )
       } finally {
         setIsLoading(false)
@@ -194,18 +240,30 @@ export function ConfirmationPage({ reference, onHome, onNewSearch }: Confirmatio
       toast.error('Référence de réservation indisponible.')
       return
     }
-    toast.success('Téléchargement du voucher...')
-    const barcodeData = generateBarcode(resolvedReference)
-    const voucherContent = generateVoucherContent(barcodeData, bookingData)
-    const blob = new Blob([voucherContent], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `voucher-${resolvedReference}.html`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    
+    // Guard against missing booking data
+    if (!bookingData) {
+      toast.error('Données de réservation non disponibles. Veuillez recharger la page.')
+      return
+    }
+    
+    try {
+      toast.success('Téléchargement du voucher...')
+      const barcodeData = generateBarcode(resolvedReference)
+      const voucherContent = generateVoucherContent(barcodeData, bookingData)
+      const blob = new Blob([voucherContent], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `voucher-${resolvedReference}.html`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error generating voucher:', error)
+      toast.error('Erreur lors de la génération du voucher. Veuillez réessayer.')
+    }
   }
 
   const generateBarcode = (data: string) => {
