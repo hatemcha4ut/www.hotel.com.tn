@@ -245,47 +245,55 @@ export const api = {
 
   getHotelDetails: async (hotelId: string): Promise<Hotel | null> => {
     try {
-      // Validate hotelId is numeric
-      const numericHotelId = Number(hotelId)
-      if (!Number.isFinite(numericHotelId) || numericHotelId <= 0) {
-        console.error(`Invalid hotel ID: ${hotelId}`)
-        return null
-      }
-
-      const apiBaseUrl = getApiBaseUrl()
-      const response = await fetch(`${apiBaseUrl}/hotels/detail`, {
+      const response = await fetch('https://api.hotel.com.tn/hotels/detail', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ hotelId: numericHotelId }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          hotelId: parseInt(hotelId, 10),
+          currency: 'TND'
+        }),
       })
 
       if (!response.ok) {
-        if (response.status === 404) {
-          console.error(`Hotel ${hotelId} not found`)
-          return null
-        }
-        const errorMessage = await parseHttpError(response)
-        throw new Error(errorMessage)
+        console.error('[HotelDetails] API call failed:', response.status)
+        return null
       }
 
       const data = await response.json()
       
-      if (!data) {
-        return null
+      // Map MyGo response to Hotel type
+      return {
+        id: String(data.id || hotelId),
+        type: 'hotel',
+        name: data.name || 'Hôtel',
+        city: data.cityName || data.city?.name || '',
+        address: data.address || '',
+        stars: typeof data.star === 'number' ? data.star : parseInt(data.star, 10) || 0,
+        rating: data.rating || 0,
+        reviewCount: data.reviewCount || 0,
+        description: data.longDescription || data.shortDescription || '',
+        image: data.image || data.album?.[0]?.url || '',
+        images: Array.isArray(data.album) 
+          ? data.album.map((img: { url?: string }) => img.url).filter((url): url is string => Boolean(url))
+          : data.image ? [data.image] : [],
+        price: 0, // Will be set from rooms
+        amenities: Array.isArray(data.facilities) 
+          ? data.facilities.map((f: { title?: string; name?: string }) => f.title || f.name).filter((name): name is string => Boolean(name))
+          : [],
+        boardingType: [],
+        hasPrice: false,
+        onRequestOnly: false,
       }
-
-      return mapMyGoHotelToFrontend(data)
-    } catch (err) {
-      console.error('Error fetching hotel details:', err)
-      throw new Error(getUserFriendlyErrorMessage(err, 'hotel-details'))
+    } catch (error) {
+      console.error('[HotelDetails] Error fetching hotel details:', error)
+      return null
     }
   },
 
-  getAvailableRooms: async (hotelId: string, roomCount?: number): Promise<Room[]> => {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    return mockRooms
+  getAvailableRooms: async (hotelId: string): Promise<Room[]> => {
+    // TODO: This should also call backend API in future
+    // For now, return empty array - rooms are in search results
+    return []
   },
 
   createBooking: async (bookingData: any): Promise<{ reference: string }> => {
