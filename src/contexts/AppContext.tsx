@@ -1,11 +1,19 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
-import { SearchParams, Language } from '@/types'
+import { SearchParams, Language, Hotel } from '@/types'
+
+interface SearchResultsData {
+  hotels: Hotel[]
+  rawCount?: number
+  visibleCount?: number
+}
 
 interface AppContextType {
   language: Language
   setLanguage: (lang: Language) => void
   searchParams: SearchParams
   setSearchParams: (params: SearchParams) => void
+  searchResults: SearchResultsData | null
+  setSearchResults: (results: SearchResultsData | null) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -36,6 +44,7 @@ const defaultSearchParams: SearchParams = {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('fr')
   const [searchParams, setSearchParams] = useState<SearchParams>(defaultSearchParams)
+  const [searchResults, setSearchResults] = useState<SearchResultsData | null>(null)
 
   return (
     <AppContext.Provider
@@ -44,6 +53,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLanguage,
         searchParams,
         setSearchParams,
+        searchResults,
+        setSearchResults,
       }}
     >
       {children}

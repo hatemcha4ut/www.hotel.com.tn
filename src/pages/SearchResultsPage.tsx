@@ -25,7 +25,7 @@ interface SearchResultsPageProps {
 }
 
 export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialResults }: SearchResultsPageProps) {
-  const { searchParams, language } = useApp()
+  const { searchParams, language, setSearchResults } = useApp()
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [filteredHotels, setFilteredHotels] = useState<Hotel[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,6 +61,12 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
         visibleCount: initialResults.visibleCount,
       })
       setLoading(false)
+      // Store results in context for HotelDetailsPage to access
+      setSearchResults({
+        hotels: initialResults.hotels,
+        rawCount: initialResults.rawCount,
+        visibleCount: initialResults.visibleCount,
+      })
       return
     }
 
@@ -82,6 +88,12 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
           rawCount: response.rawCount,
           visibleCount: response.visibleCount,
         })
+        // Store results in context for HotelDetailsPage to access
+        setSearchResults({
+          hotels: results,
+          rawCount: response.rawCount,
+          visibleCount: response.visibleCount,
+        })
       } catch (error) {
         console.error('Error loading hotels:', error)
         const message =
@@ -91,12 +103,14 @@ export function SearchResultsPage({ onViewHotel, onBack, onNewSearch, initialRes
         setHotels([])
         setFilteredHotels([])
         setSearchCounts(null)
+        // Clear context on error
+        setSearchResults(null)
       } finally {
         setLoading(false)
       }
     }
     loadHotels()
-  }, [searchParams, initialResults, retryCount])
+  }, [searchParams, initialResults, retryCount, setSearchResults])
 
   useEffect(() => {
     let filtered = [...hotels]

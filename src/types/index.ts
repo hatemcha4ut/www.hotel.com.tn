@@ -19,6 +19,7 @@ export interface Hotel {
   longitude?: number
   checkInTime?: string
   checkOutTime?: string
+  rooms?: Room[]  // Optional rooms from search results
   promotion?: {
     discount: number
     label: string

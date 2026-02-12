@@ -88,6 +88,16 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
     }
   }
   
+  /**
+   * Get selected boarding type for a room with fallback precedence:
+   * 1. roomBoardings (user selection during booking)
+   * 2. room.selectedBoarding (pre-selected from hotel details)
+   * 3. room.boardingType (default from room data)
+   */
+  const getSelectedBoarding = (roomIndex: number = 0): string | undefined => {
+    return roomBoardings?.[roomIndex] || room.selectedBoarding || room.boardingType
+  }
+  
   const handleSubmit = async () => {
     setProcessing(true)
     setBookingError('')
@@ -99,6 +109,56 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
       if (!hotelId) {
         throw new Error('Identifiant de l’hôtel manquant. Veuillez revenir à la fiche hôtel.')
       }
+
+      // Validate hotelId is a valid positive number
+      const hotelIdNum = Number(hotelId)
+      if (isNaN(hotelIdNum) || hotelIdNum <= 0) {
+        throw new Error("Identifiant de l'hôtel invalide.")
+      }
+
+      // Validate cityId is a valid positive number
+      if (!searchParams.cityId) {
+        throw new Error('Identifiant de la ville manquant. Veuillez effectuer une nouvelle recherche.')
+      }
+      const cityIdNum = Number(searchParams.cityId)
+      if (isNaN(cityIdNum) || cityIdNum <= 0) {
+        throw new Error('Identifiant de la ville invalide.')
+      }
+
+      // Validate room ID exists and is a valid positive number
+      if (!room?.id) {
+        throw new Error('Identifiant de la chambre manquant.')
+      }
+      const roomIdNum = Number(room.id)
+      if (isNaN(roomIdNum) || roomIdNum <= 0) {
+        throw new Error('Identifiant de la chambre invalide.')
+      }
+
+      // Validate selectedBoarding exists
+      const selectedBoarding = getSelectedBoarding()
+      if (!selectedBoarding) {
+        throw new Error('Type de pension manquant. Veuillez sélectionner une option de pension.')
+      }
+
+      // Validate check-in and check-out dates exist
+      if (!searchParams.checkIn || !searchParams.checkOut) {
+        throw new Error('Dates de séjour manquantes. Veuillez effectuer une nouvelle recherche.')
+      }
+
+      // Validate guest details required fields
+      if (!guestDetails.firstName || !guestDetails.firstName.trim()) {
+        throw new Error('Le prénom est requis.')
+      }
+      if (!guestDetails.lastName || !guestDetails.lastName.trim()) {
+        throw new Error('Le nom est requis.')
+      }
+      if (!guestDetails.email || !guestDetails.email.trim()) {
+        throw new Error("L'adresse e-mail est requise.")
+      }
+      if (!guestDetails.nationality || !guestDetails.nationality.trim()) {
+        throw new Error('La nationalité est requise.')
+      }
+
       // Call initiateCheckout first to check wallet credit
       setCheckingOut(true)
       const checkoutResponse = await initiateCheckout({
