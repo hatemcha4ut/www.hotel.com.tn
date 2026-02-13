@@ -1,5 +1,3 @@
 name = "www-hotel-com-tn"
 compatibility_date = "2026-02-13"
-
-[site]
-bucket = "./dist"
+pages_build_output_dir = "./dist"
