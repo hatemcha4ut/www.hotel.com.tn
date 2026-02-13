@@ -20,7 +20,6 @@ import { toast } from 'sonner'
 import { AuthDialog } from '@/components/AuthDialog'
 import { getSupabaseClient } from '@/lib/supabase'
 import { createGuestBooking } from '@/services/guestBooking'
-import { initiateCheckout } from '@/services/inventorySync'
 
 interface BookingPageProps {
   hotel: Hotel
@@ -60,9 +59,6 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
   const currentUser = useAuthUser()
   const [isGuestMode, setIsGuestMode] = useState(false)
   const [bookingError, setBookingError] = useState<string>('')
-  const [checkoutBlocked, setCheckoutBlocked] = useState(false)
-  const [checkoutBlockReason, setCheckoutBlockReason] = useState<string>('')
-  const [checkingOut, setCheckingOut] = useState(false)
   
   // E.164 WhatsApp validation
   const validateWhatsApp = (number: string): boolean => {
@@ -107,7 +103,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
       }
       const hotelId = hotel?.id?.trim()
       if (!hotelId) {
-        throw new Error('Identifiant de l’hôtel manquant. Veuillez revenir à la fiche hôtel.')
+        throw new Error('Identifiant de l\'hôtel manquant. Veuillez revenir à la fiche hôtel.')
       }
 
       // Validate hotelId is a valid positive number
@@ -159,30 +155,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
         throw new Error('La nationalité est requise.')
       }
 
-      // Call initiateCheckout first to check wallet credit
-      setCheckingOut(true)
-      const checkoutResponse = await initiateCheckout({
-        hotelId,
-        rooms: bookingRooms.map((r, idx) => ({
-          ...r,
-          selectedBoarding: roomBoardings[idx],
-        })),
-        searchParams,
-        guestDetails,
-        totalAmount,
-      })
-      setCheckingOut(false)
-      
-      // Check if checkout is blocked (e.g., wallet_insufficient)
-      if (checkoutResponse.blocked) {
-        const reason = checkoutResponse.reason || 'Impossible de continuer avec cette réservation.'
-        setCheckoutBlocked(true)
-        setCheckoutBlockReason(reason)
-        setBookingError(reason)
-        return
-      }
-      
-      // If not blocked, proceed with booking
+      // Proceed with booking
       await createGuestBooking({
         hotelId,
         hotel,
@@ -202,7 +175,6 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
       // Don't show duplicate toast when retry button exists
     } finally {
       setProcessing(false)
-      setCheckingOut(false)
     }
   }
 
@@ -839,57 +811,13 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
               <div className="space-y-4">
                 <Card>
                   <CardContent className="pt-6 space-y-4">
-                    {!checkoutBlocked && !bookingError && (
+                    {!bookingError && (
                       <p className="text-sm text-muted-foreground">
                         Cliquez ci-dessous pour générer votre lien de paiement sécurisé.
                       </p>
                     )}
                     
-                    {checkoutBlocked && (
-                      <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-                        <div className="flex items-start gap-3 mb-4">
-                          <Warning size={24} weight="fill" className="text-yellow-600 flex-shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-yellow-900 mb-2">
-                              Réservation temporairement indisponible
-                            </h4>
-                            <p className="text-sm text-yellow-800 mb-3">
-                              {checkoutBlockReason}
-                            </p>
-                            <p className="text-sm text-yellow-800">
-                              Nous vous suggérons de modifier vos dates de séjour ou d'essayer un autre hôtel.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          {onNewSearch && (
-                            <Button 
-                              variant="default" 
-                              size="sm" 
-                              onClick={onNewSearch}
-                              className="flex-1"
-                            >
-                              <MagnifyingGlass size={18} className="mr-2" />
-                              Rechercher d'autres hôtels
-                            </Button>
-                          )}
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                              setStep(2)
-                              setCheckoutBlocked(false)
-                              setBookingError('')
-                            }}
-                            className="flex-1"
-                          >
-                            Modifier la réservation
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {bookingError && !checkoutBlocked && (
+                    {bookingError && (
                       <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
                         <p className="text-sm text-destructive font-medium mb-3">
                           {bookingError}
@@ -907,7 +835,7 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
                             variant="default" 
                             size="sm" 
                             onClick={handleSubmit}
-                            disabled={processing || checkingOut}
+                            disabled={processing}
                             className="flex-1"
                           >
                             Réessayer
@@ -916,16 +844,14 @@ export function BookingPage({ hotel, room, rooms, onBack, onComplete, onNewSearc
                       </div>
                     )}
                     
-                    {!checkoutBlocked && (
-                      <div className="flex gap-4">
-                        <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
-                          Retour
-                        </Button>
-                        <Button onClick={handleSubmit} className="flex-1" disabled={processing || checkingOut}>
-                          {checkingOut ? 'Vérification...' : processing ? 'Redirection...' : 'Procéder au paiement'}
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-4">
+                      <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
+                        Retour
+                      </Button>
+                      <Button onClick={handleSubmit} className="flex-1" disabled={processing}>
+                        {processing ? 'Redirection...' : 'Procéder au paiement'}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
