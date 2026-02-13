@@ -9,7 +9,6 @@
  * No MyGo tokens are used or required from search-hotels response.
  */
 import { getSupabaseClient } from '@/lib/supabase'
-import { getMyGoErrorMessage } from '@/services/inventorySync'
 import { getUserFriendlyErrorMessage } from '@/lib/edgeFunctionErrors'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { GuestDetails, Hotel, Room, SearchParams } from '@/types'
@@ -42,10 +41,31 @@ interface GuestBookingResponse {
   payment_url?: string
   booking_id?: string
   reference?: string
+  error?: string
+  message?: string
 }
 
 const getPaymentUrl = (payload: GuestBookingResponse | null) =>
   payload?.paymentUrl ?? payload?.payment_url
+
+/**
+ * Extract error message from MyGo response if present
+ */
+const getMyGoErrorMessage = (data: GuestBookingResponse | null): string | null => {
+  if (!data) return null
+  
+  // Check for explicit error field
+  if (data.error) {
+    return data.error
+  }
+  
+  // Check for message field that might contain error
+  if (data.message && !data.paymentUrl && !data.payment_url) {
+    return data.message
+  }
+  
+  return null
+}
 
 const ensureSession = async (supabase: SupabaseClient) => {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
