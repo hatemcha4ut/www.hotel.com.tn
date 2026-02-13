@@ -75,5 +75,11 @@ export default defineConfig({
         manualChunks: undefined
       }
     }
+  },
+  // Hardcode environment variables for production build
+  define: {
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('https://yuwwyjzwjxtjhvwqxzuf.supabase.co'),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1d3d5anp3anh0amh2d3F4enVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjg0NTUsImV4cCI6MjA4NTc0NDQ1NX0.YEVVGSYTBtu-zusJ7tbuxJEcsuiKUVXAK_7fKblM7Bg'),
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify('https://api.hotel.com.tn'),
   }
 });
