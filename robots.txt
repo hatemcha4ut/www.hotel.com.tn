@@ -1,0 +1,26 @@
+# robots.txt for hotel.com.tn
+# https://hotel.com.tn
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+# Allow assets
+Allow: /assets/
+Allow: /images/
+
+# Sitemap
+Sitemap: https://hotel.com.tn/sitemap.xml
+
+# Google
+User-agent: Googlebot
+Allow: /
+
+# Twitter
+User-agent: Twitterbot
+Allow: /
+
+# Facebook
+User-agent: facebookexternalhit
+Allow: /
